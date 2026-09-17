@@ -1,361 +1,374 @@
-import streamlit as st
+"""
+AcidoScope — 急診高陰離子隙代謝性酸中毒 決策輔助
+精簡版 v2：並列評分（非互斥）、缺值透明化、移除行銷語與偽信心度。
+※ 臨床決策輔助，不取代醫師判斷。所有劑量以院內藥典/毒物中心為準。
+"""
+
 import re
+import streamlit as st
 
-# ==============================================================================
-# 頁面基礎設定與視覺樣式
-# ==============================================================================
-st.set_page_config(
-    page_title="智酸析 AcidoScope - 急診酸中毒與智慧醫囑副駕",
-    page_icon="🧪",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="AcidoScope", page_icon="🧪", layout="wide")
 
-# 自訂卡片風格 CSS
-st.markdown("""
-<style>
-    .metric-card { background-color: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 10px; border-left: 5px solid #0d6efd; }
-    .warning-box { background-color: #fff3cd; border-radius: 8px; padding: 12px; border-left: 5px solid #ffc107; margin-bottom: 10px; }
-    .danger-box { background-color: #f8d7da; border-radius: 8px; padding: 12px; border-left: 5px solid #dc3545; margin-bottom: 10px; }
-    .success-box { background-color: #d1e7dd; border-radius: 8px; padding: 12px; border-left: 5px solid #198754; margin-bottom: 10px; }
-</style>
-""", unsafe_allow_html=True)
-
-st.title("🧪 智酸析 (AcidoScope) - 急診重症酸中毒智慧鑑別與指引醫囑 Co-pilot")
-st.caption("【院內 AI 應用賽參賽成果】四角病因秒鑑別 × EXTRIP 急透析判定 × 動態腎功能指引醫囑 | 本地零 PII 資安架構")
-
-# ==============================================================================
-# 模組一：本地記憶體零 PII 脫敏引擎 (Client-side De-identification)
-# ==============================================================================
-def local_deidentify(text: str) -> str:
-    """於記憶體層級徹底抹除身分證、病歷號、姓名等個資，確保資料 100% 不外洩"""
-    # 抹除台灣身分證字號
-    text = re.sub(r'[A-Z][1289]\d{8}', '***[身分證已遮蔽]***', text, flags=re.IGNORECASE)
-    # 抹除 7-10 碼病歷號
-    text = re.sub(r'\b\d{7,10}\b', '***[病歷號已遮蔽]***', text)
-    # 抹除就醫日期
-    text = re.sub(r'\d{4}[-/]\d{1,2}[-/]\d{1,2}', '[日期已遮蔽]', text)
+# ------------------------------------------------------------------
+# 1. 去識別化（先遮後解析）
+# ------------------------------------------------------------------
+def deidentify(text: str) -> str:
+    text = re.sub(r'\b[A-Z][12]\d{8}\b', '[ID]', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?<![:=\d.])\b\d{8,10}\b(?![.\d])', '[MRN]', text)
+    text = re.sub(r'\d{4}[-/]\d{1,2}[-/]\d{1,2}', '[DATE]', text)
     return text
 
-def parse_labs_input(text: str) -> dict:
-    """自動從雜亂檢驗文字中抓取關鍵檢驗數值"""
+
+# ------------------------------------------------------------------
+# 2. 檢驗值解析
+# ------------------------------------------------------------------
+LAB_RULES = {
+    'pH':       r'\bpH\s*[:=]?\s*([67]\.\d{1,3})',
+    'HCO3':     r'\bHCO3\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
+    'Lactate':  r'\b(?:Lactate|Lac)\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
+    'Na':       r'\bNa\s*[:=]?\s*(\d{2,3})',
+    'Cl':       r'\bCl\s*[:=]?\s*(\d{2,3})',
+    'Cr':       r'\b(?:Cr|Creatinine)\s*[:=]?\s*(\d{1,2}(?:\.\d{1,2})?)',
+    'BUN':      r'\bBUN\s*[:=]?\s*(\d{1,3})',
+    'Glucose':  r'\b(?:Glu|Glucose)\s*[:=]?\s*(\d{2,4})',
+    'Albumin':  r'\b(?:Alb|Albumin)\s*[:=]?\s*(\d(?:\.\d)?)',
+    'Ketone':   r'\b(?:BHB|Ketone|beta-?hydroxybutyrate)\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
+    'Ethanol':  r'\b(?:EtOH|Ethanol)\s*[:=]?\s*(\d{1,3})',
+    'Osm':      r'\b(?:Osm|Osmolality)\s*[:=]?\s*(\d{3})',
+}
+
+
+def parse_labs(text: str) -> dict:
     labs = {}
-    rules = {
-        'pH': r'pH\s*[:=]?\s*([6-7]\.\d{1,3})',
-        'pCO2': r'pCO2\s*[:=]?\s*(\d{1,3})',
-        'HCO3': r'HCO3\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
-        'Lactate': r'(?:Lactate|Lac)\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
-        'Na': r'\bNa\s*[:=]?\s*(\d{2,3})',
-        'Cl': r'\bCl\s*[:=]?\s*(\d{2,3})',
-        'Cr': r'(?:Cr|Creatinine)\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
-        'BUN': r'\bBUN\s*[:=]?\s*(\d{1,3})',
-        'Glucose': r'(?:Glu|Glucose)\s*[:=]?\s*(\d{2,4})',
-        'Measured_Osm': r'(?:Osm|Osmolality)\s*[:=]?\s*(\d{3})',
-        'SBP': r'SBP\s*[:=]?\s*(\d{2,3})',
-        'HR': r'HR\s*[:=]?\s*(\d{2,3})'
-    }
-    for key, pat in rules.items():
+    for key, pat in LAB_RULES.items():
         m = re.search(pat, text, re.IGNORECASE)
         if m:
-            try:
-                labs[key] = float(m.group(1))
-            except:
-                pass
+            labs[key] = float(m.group(1))
     return labs
 
-def parse_medications_input(text: str) -> list:
-    """背景掃描高危致病藥物"""
-    found = []
+
+DRUG_PATTERNS = [
+    (r'metformin|glucophage', 'Metformin', 'MALA'),
+    (r'gliflozin|jardiance|forxiga|invokana', 'SGLT2i', 'eDKA'),
+    (r'ibuprofen|diclofenac|ketorolac|naproxen|sartan|pril\b', 'NSAID/RASi', 'AKI 加劇'),
+    (r'aspirin|salicyl', 'Salicylate', '水楊酸中毒'),
+    (r'linezolid|propofol|stavudine|tenofovir', '粒線體毒性藥物', 'Type B lactate'),
+]
+
+
+def parse_meds(text: str):
     t = text.lower()
-    if re.search(r'(metformin|glucophage|庫魯化|美獲蒙|伏糖)', t):
-        found.append(('Metformin (二甲雙胍)', 'MALA 粒線體毒性誘發因子'))
-    if re.search(r'(empagliflozin|dapagliflozin|canagliflozin|jardiance|forxiga|排糖高|安普諾)', t):
-        found.append(('SGLT2 抑制劑', 'eDKA 正常血糖酮酸中毒誘發因子'))
-    if re.search(r'(ibuprofen|diclofenac|ketorolac|naproxen|losartan|valsartan|enalapril)', t):
-        found.append(('NSAID / RAS 抑制劑', '急性腎衰竭加劇因子'))
-    if re.search(r'(aspirin|bopirin|阿斯匹靈)', t):
-        found.append(('Aspirin (水楊酸)', '水楊酸中毒風險'))
-    return found
+    return [(n, r) for p, n, r in DRUG_PATTERNS if re.search(p, t)]
 
-# ==============================================================================
-# 模組二：生化計算、EXTRIP 洗腎指引與四角鑑別診斷核心 (Phase 1)
-# ==============================================================================
-def analyze_acidosis(labs: dict, meds: list, smart_blood_test_prob: int, alcoholism_history: bool):
-    na = labs.get('Na', 140.0)
-    cl = labs.get('Cl', 100.0)
-    hco3 = labs.get('HCO3', 24.0)
-    glu = labs.get('Glucose', 100.0)
-    bun = labs.get('BUN', 15.0)
-    cr = labs.get('Cr', 1.0)
-    lactate = labs.get('Lactate', 1.0)
-    ph = labs.get('pH', 7.40)
-    sbp = labs.get('SBP', 120.0)
-    hr = labs.get('HR', 80.0)
-    measured_osm = labs.get('Measured_Osm', None)
 
-    # 1. 基礎生化公式計算
-    anion_gap = na - (cl + hco3)
-    shock_index = (hr / sbp) if sbp > 0 else 0
-    
-    # 計算滲透壓隙 (Osmolar Gap)
-    calc_osm = (2 * na) + (glu / 18.0) + (bun / 2.8)
-    osm_gap = (measured_osm - calc_osm) if measured_osm else 0.0
+# ------------------------------------------------------------------
+# 3. 生化計算（缺值一律回傳 None，不假設正常）
+# ------------------------------------------------------------------
+def compute(labs: dict) -> dict:
+    na, cl, hco3 = labs.get('Na'), labs.get('Cl'), labs.get('HCO3')
+    out = {'ag': None, 'ag_corr': None, 'osm_gap': None, 'delta_ratio': None}
 
-    has_metformin = any('Metformin' in m[0] for m in meds)
-    has_sglt2i = any('SGLT2' in m[0] for m in meds)
+    if None not in (na, cl, hco3):
+        ag = na - (cl + hco3)
+        out['ag'] = ag
+        alb = labs.get('Albumin')
+        if alb is not None:
+            out['ag_corr'] = ag + 2.5 * (4.0 - alb)
+        eff_ag = out['ag_corr'] if out['ag_corr'] is not None else ag
+        if hco3 < 24:
+            out['delta_ratio'] = (eff_ag - 12) / (24 - hco3) if hco3 != 24 else None
 
-    # 2. 四角病因鑑別演算法
-    etiology = "未明原因代謝性酸中毒"
-    confidence = 60
-    reasons = []
-    negative_pertinence = []
+    if None not in (na, labs.get('Osm')):
+        calc = 2 * na + labs.get('Glucose', 90) / 18.0 + labs.get('BUN', 14) / 2.8
+        if labs.get('Ethanol') is not None:
+            calc += labs['Ethanol'] / 3.7          # 未加此項會把酒精誤判為毒醇
+        out['osm_gap'] = labs['Osm'] - calc
+    return out
 
-    # 判定 A: 毒性酒精 (甲醇/乙二醇)
-    if osm_gap >= 15.0 and anion_gap >= 16.0:
-        etiology = "毒性酒精中毒 (甲醇 / 乙二醇)"
-        confidence = 94
-        reasons.append(f"高滲透壓隙顯著異常 (Osmolar Gap = {osm_gap:.1f} mOsm/kg > 15)，伴隨嚴重高陰離子隙酸中毒。")
-        negative_pertinence.append("高滲透隙強烈排他性支持外源性毒醇攝入，非單純內源性代謝酸中毒。")
-        
-    # 判定 B: MALA (二甲雙胍乳酸酸中毒)
-    elif has_metformin and lactate >= 8.0 and cr >= 2.0:
-        etiology = "二甲雙胍相關乳酸酸中毒 (MALA)"
-        confidence = 92
-        reasons.append("雲端藥歷檢出 Metformin，合併重度乳酸血症 (Lactate ≥ 8) 與急性腎衰竭。")
-        if shock_index < 1.0:
-            negative_pertinence.append(f"休克指數僅 {shock_index:.2f} (未顯著異常)，強烈排他支持 Type B 粒線體毒性，非一般敗血休克。")
-            
-    # 判定 C: 酒精性酮酸中毒 (AKA)
-    elif alcoholism_history and anion_gap >= 16.0 and (not measured_osm or osm_gap < 15.0):
-        etiology = "酒精性酮酸中毒 (Alcoholic Ketoacidosis, AKA)"
-        confidence = 88
-        reasons.append("具長期酗酒史/禁食嘔吐，呈現代謝性酸中毒，但排除高滲透壓毒醇中毒。")
-        negative_pertinence.append("滲透壓隙正常，排他支持內源性酮體生成，非甲醇/乙二醇毒害。")
 
-    # 判定 D: 智血檢吻合之敗血性休克 (Type A)
-    elif smart_blood_test_prob >= 60 and lactate >= 4.0:
-        etiology = "敗血性休克引發組織缺氧 (Type A 乳酸酸中毒)"
-        confidence = 89
-        reasons.append(f"【中醫大智血檢】預測菌血症機率達 {smart_blood_test_prob}%，合併全身組織低灌流與高乳酸。")
-        negative_pertinence.append("無粒線體抑制藥物暴露史，符合全身性感染 SIRS 誘發之缺氧性酸中毒。")
-        
-    # 判定 E: SGLT2i 引發之 eDKA
-    elif has_sglt2i and anion_gap >= 16.0 and glu < 250:
-        etiology = "正常血糖型糖尿病酮酸中毒 (eDKA)"
-        confidence = 86
-        reasons.append("雲端藥歷檢出 SGLT2 抑制劑，血糖未達傳統 DKA 門檻 (<250 mg/dL) 但呈現顯著 High AG 酸中毒。")
+# ------------------------------------------------------------------
+# 4. 病因並列評分（可同時成立，不互斥）
+# ------------------------------------------------------------------
+def score_etiologies(labs, meds, calc, alcohol_hx, sepsis_suspect):
+    ag = calc['ag_corr'] if calc['ag_corr'] is not None else calc['ag']
+    high_ag = ag is not None and ag >= 16
+    lac, cr, ph = labs.get('Lactate'), labs.get('Cr'), labs.get('pH')
+    glu, bhb, og = labs.get('Glucose'), labs.get('Ketone'), calc['osm_gap']
+    drugs = [m[0] for m in meds]
+    res = []
 
-    # 3. EXTRIP 血液透析急迫性判定
-    dialysis_level = "GREEN"
-    dialysis_title = "暫無需緊急血液透析"
-    dialysis_detail = "未達急診緊急血液淨化（EXTRIP）絕對適應症，建議常規醫療處置。"
+    def add(name, hits, total, note):
+        if hits:
+            res.append({'name': name, 'hits': hits, 'total': total, 'note': note})
 
-    if "毒性酒精" in etiology:
-        if osm_gap > 15.0 or ph <= 7.15:
-            dialysis_level = "RED"
-            dialysis_title = "🚨 強烈建議立即啟動緊急透析 (EXTRIP 毒醇指引)"
-            dialysis_detail = "符合 EXTRIP 甲醇/乙二醇指引：嚴重高滲透隙伴隨酸血症，透析為清除毒醇母體與有毒代謝物之關鍵！"
-            
-    elif "MALA" in etiology:
-        if lactate > 20.0 or ph <= 7.00:
-            dialysis_level = "RED"
-            dialysis_title = "🚨 強烈建議立即啟動緊急透析 (EXTRIP 等級 1D)"
-            dialysis_detail = f"動脈血乳酸達 {lactate} mmol/L (>20) 或 pH {ph} (≤7.00)，內科常規治療極易心跳停止，應立即透析清除 Metformin！"
-        elif (15.0 <= lactate <= 20.0 or 7.01 <= ph <= 7.10) and cr >= 2.0:
-            dialysis_level = "RED"
-            dialysis_title = "⚠️ 建議啟動緊急透析 (EXTRIP 等級 2D)"
-            dialysis_detail = "乳酸達 15-20 mmol/L 且合併急性腎損傷 (Cr ≥ 2.0)，指引建議積極啟動透析阻斷器官衰竭。"
-            
-    elif "AKA" in etiology:
-        dialysis_level = "GREEN"
-        dialysis_title = "🟢 嚴禁盲目洗腎！給予含糖輸液即可逆轉"
-        dialysis_detail = "AKA 為飢餓與酒精代謝紊亂，補充葡萄糖 (D5W) 刺激內源性胰島素並給予維生素 B1，即可迅速逆轉，不需洗腎！"
-        
-    elif ph < 7.10 or (cr >= 4.5 and anion_gap >= 22):
-        dialysis_level = "RED"
-        dialysis_title = "🚨 建議啟動緊急透析 (KDIGO 難治型酸中毒)"
-        dialysis_detail = f"難治型重度酸血症 (pH {ph} < 7.10) 合併代謝失衡，常規內科復甦效果有限。"
+    # 毒性酒精
+    h = []
+    if og is not None and og > 20: h.append(f"Osm gap {og:.0f} > 20（已扣除已測 ethanol）")
+    if high_ag: h.append(f"AG {ag:.0f} 升高")
+    if lac is not None and lac < 5 and high_ag: h.append("高 AG 但乳酸不高 → 未解釋之陰離子")
+    add("毒性酒精（甲醇 / 乙二醇）", h, 3,
+        "Osm gap 正常不能排除（晚期母體已代謝完）。需要視覺症狀、尿液草酸鈣結晶、毒物濃度佐證。")
 
-    return {
-        'anion_gap': anion_gap,
-        'shock_index': shock_index,
-        'osm_gap': osm_gap,
-        'etiology': etiology,
-        'confidence': confidence,
-        'reasons': reasons,
-        'negative_pertinence': negative_pertinence,
-        'dialysis_level': dialysis_level,
-        'dialysis_title': dialysis_title,
-        'dialysis_detail': dialysis_detail
-    }
+    # MALA
+    h = []
+    if 'Metformin' in drugs: h.append("藥歷含 Metformin")
+    if lac is not None and lac >= 5: h.append(f"Lactate {lac}")
+    if cr is not None and cr >= 1.5: h.append(f"Cr {cr}（腎排除下降）")
+    if ph is not None and ph <= 7.20: h.append(f"pH {ph}")
+    add("MALA（metformin 相關乳酸酸中毒）", h, 4,
+        "台灣多數院所無法急測 metformin 濃度，屬臨床診斷。與敗血症可並存，不應互斥判讀。")
 
-# ==============================================================================
-# 模組三：Phase 2 動態指引醫囑與個人化腎功能劑量引擎 (Guideline-to-Order)
-# ==============================================================================
-def generate_dynamic_guideline_orders(etiology: str, labs: dict, weight: float, age: int):
-    """超越長庚傳統死板熱鍵：依據病患 eGFR、體重與年齡，動態算好劑量並產出指引醫囑"""
-    cr = labs.get('Cr', 1.0)
-    # Cockcroft-Gault 公式估算肌酸酐廓清率 (mL/min)
-    crcl = int(((140 - age) * weight) / (72 * cr)) if cr > 0 else 90
+    # 敗血 / 組織缺氧
+    h = []
+    if sepsis_suspect: h.append("臨床疑感染")
+    if lac is not None and lac >= 4: h.append(f"Lactate {lac} ≥ 4")
+    add("Type A 乳酸酸中毒（灌流不足 / 敗血）", h, 2,
+        "最常見且最不可漏。即使符合 MALA 也應同時覆蓋感染源。")
 
-    order_bundle = []
-    contraindicated_orders = []
+    # 酮酸（DKA / eDKA / AKA）
+    h = []
+    if bhb is not None and bhb >= 3: h.append(f"BHB {bhb}")
+    if 'SGLT2i' in drugs: h.append("藥歷含 SGLT2i")
+    if alcohol_hx: h.append("酗酒 / 禁食嘔吐病史")
+    if glu is not None and glu < 250 and high_ag: h.append("血糖 <250 但高 AG（eDKA/AKA 型態）")
+    add("酮酸中毒（DKA / eDKA / AKA）", h, 4,
+        "關鍵是血清 BHB，不是血糖。SGLT2i 停藥後酮體仍可持續數日。")
 
-    if "MALA" in etiology:
-        order_bundle.append(("【透析準備】緊急置入雙腔血液透析導管 (Double Lumen) - 建議右內頸靜脈", "EXTRIP 透析路徑首選"))
-        order_bundle.append(("【急診抽血】Type & Screen (備血) + 凝血功能 (PT/APTT) + 病毒標記 (B/C肝/HIV)", "洗腎前常規配套"))
-        order_bundle.append(("【輸液保護】生理食鹽水點滴限速 < 20 mL/hr，嚴密監控尿量，避免過度輸液", "防肺水腫"))
-        contraindicated_orders.append("禁止開立腹部/胸部顯影劑 CT 檢查 (Contrast CT) - 避免不可逆腎壞死")
-        contraindicated_orders.append("避免常規 30 mL/kg 大量點滴灌注 - MALA 為粒線體毒性，盲目灌水易致急性心衰竭")
-        
-    elif "毒性酒精" in etiology:
-        order_bundle.append(("【急診透析】立即照會腎臟科準備血液透析 (HD) 清除毒性醇類與甲酸", "EXTRIP 毒醇指引"))
-        order_bundle.append(("【解毒處置】給予 Fomepizole 15 mg/kg (若無則使用 Ethanol 10% 輸注液)", "阻斷乙醇脫氫酶 (ADH)"))
-        order_bundle.append(("【葉酸補充】Folic acid 50 mg IV q4h (加速甲酸分解)", "甲醇中毒神經保護"))
-        
-    elif "AKA" in etiology:
-        order_bundle.append(("【含糖輸液】D5W (5% 葡萄糖) 500 mL run 100 mL/hr (刺激胰島素分泌以關閉酮體)", "AKA 第一線治療"))
-        order_bundle.append(("【維生素補充】Thiamine (維生素 B1) 100 mg IV stat (打糖前必給)", "預防韋尼克氏腦病變"))
-        order_bundle.append(("【電解質監控】抽血追蹤血鉀 (K) 與血磷 (Phosphate)", "給糖後易發生細胞內轉移低血鉀"))
-        contraindicated_orders.append("暫無緊急血液透析適應症，避免盲目插管洗腎")
-        
-    elif "敗血" in etiology:
-        # 動態計算 30 mL/kg 輸液量
-        fluid_target = int(weight * 30)
-        order_bundle.append((f"【黃金一小時】晶體輸液 (Balanced Crystalloid) {fluid_target} mL 於 3 小時內輸注完畢", "Surviving Sepsis Campaign 30mL/kg"))
-        order_bundle.append(("【感染源評估】血液培養兩套 (Blood Culture x2) + 驗尿 + 驗胸部 X 光", "抗生素前完成"))
-        
-        # 依腎功能動態微調抗生素劑量 (超越長庚死板模式)
-        if crcl < 15:
-            order_bundle.append((f"【抗生素劑量調校】Cefepime 1g IV q24h (原劑量 2g q8h，因 CrCl {crcl} 自動下修)", "Sanford 腎功能減量指引"))
-        elif crcl < 30:
-            order_bundle.append((f"【抗生素劑量調校】Cefepime 1g IV q12h (原劑量 2g q8h，因 CrCl {crcl} 自動下修)", "Sanford 腎功能減量指引"))
-        else:
-            order_bundle.append(("【抗生素劑量調校】Cefepime 2g IV q8h (常規劑量)", "腎功能正常"))
-            
-    elif "eDKA" in etiology:
-        order_bundle.append(("【急診加驗】加驗血清酮體 (Beta-hydroxybutyrate) 與靜脈氣體分析 (VBG)", "eDKA 破案關鍵"))
-        order_bundle.append(("【雙軌輸注】D5W 葡萄糖輸注維持血糖 150-200 mg/dL ＋ Regular Insulin 0.05-0.1 U/kg/hr", "關閉脂肪分解與酮酸"))
-        
-    return crcl, order_bundle, contraindicated_orders
+    # 水楊酸
+    h = []
+    if 'Salicylate' in drugs: h.append("藥歷含 salicylate")
+    if high_ag and ph is not None and ph > 7.40: h.append("高 AG 併鹼血症 → 混合型，典型水楊酸")
+    add("水楊酸中毒", h, 2, "呼吸性鹼中毒＋代謝性酸中毒併存時務必驗濃度。")
 
-# ==============================================================================
-# 前端畫面佈局 (Streamlit Layout)
-# ==============================================================================
-# 側邊欄：病患參數與中醫大智血檢連動
+    # 尿毒
+    h = []
+    if cr is not None and cr >= 4: h.append(f"Cr {cr}")
+    if high_ag: h.append("高 AG")
+    add("尿毒性酸中毒", h, 2, "須為慢性或明確重度 AKI，且已排除其他來源。")
+
+    res.sort(key=lambda x: (len(x['hits']) / x['total'], len(x['hits'])), reverse=True)
+    return res
+
+
+# ------------------------------------------------------------------
+# 5. 缺漏檢驗
+# ------------------------------------------------------------------
+def missing_tests(labs):
+    miss = []
+    if labs.get('Ketone') is None:
+        miss.append("血清 β-hydroxybutyrate — 未驗則無法排除 eDKA / AKA")
+    if labs.get('Osm') is None:
+        miss.append("血清滲透壓（需與血液同時抽）— 未驗則無法評估毒醇")
+    if labs.get('Ethanol') is None and labs.get('Osm') is not None:
+        miss.append("血中 ethanol — 未扣除會把酒精誤判成甲醇/乙二醇")
+    if labs.get('Albumin') is None:
+        miss.append("Albumin — 低白蛋白會低估 AG")
+    if labs.get('Lactate') is None:
+        miss.append("Lactate")
+    return miss
+
+
+# ------------------------------------------------------------------
+# 6. 透析指徵
+# ------------------------------------------------------------------
+def dialysis_assessment(labs, calc, top_names):
+    ph, lac, cr = labs.get('pH'), labs.get('Lactate'), labs.get('Cr')
+    urgent, consider = [], []
+
+    if any('毒性酒精' in n for n in top_names):
+        if ph is not None and ph < 7.30:
+            urgent.append("疑毒醇中毒併酸血症（pH <7.30）：EXTRIP/ACMT 建議體外清除，且**解毒劑不可等透析**")
+        consider.append("其他透析指徵：視覺障礙、確診高濃度毒醇、腎損傷、解毒劑無法取得")
+
+    if any('MALA' in n for n in top_names):
+        if (lac is not None and lac > 20) or (ph is not None and ph <= 7.00):
+            urgent.append("MALA 併 lactate >20 或 pH ≤7.00：EXTRIP 建議體外清除（強烈）")
+        elif (lac is not None and lac > 15) or (ph is not None and ph <= 7.10) or (cr is not None and cr >= 2.0):
+            consider.append("MALA 併 lactate >15 / pH ≤7.10 / 明顯 AKI：EXTRIP 建議考慮體外清除")
+
+    if any('水楊酸' in n for n in top_names):
+        consider.append("水楊酸：意識改變、肺水腫、腎損傷或濃度持續上升 → 透析指徵")
+
+    consider.append("一般 AKI：無危及生命指徵時，延後 RRT 不劣於早期啟動（STARRT-AKI / AKIKI）— "
+                    "依高鉀、容積過載、難治性酸血症、尿毒症狀決定，不以單一 pH 數值啟動")
+    return urgent, consider
+
+
+# ------------------------------------------------------------------
+# 7. 處置建議
+# ------------------------------------------------------------------
+def orders_for(name, labs, weight):
+    cr = labs.get('Cr')
+    aki = cr is not None and cr >= 1.5
+    give, avoid = [], []
+
+    if '毒性酒精' in name:
+        give += [
+            "Fomepizole 15 mg/kg IV loading → 10 mg/kg q12h ×4 劑 → 之後 15 mg/kg q12h；"
+            "透析進行中改為 q4h 或連續輸注（劑量依院內藥典/毒物中心確認）",
+            "無 fomepizole 時以 ethanol 輸注維持血中濃度約 100 mg/dL",
+            "疑甲醇：folinic acid（或 folic acid）1 mg/kg，單次上限 50 mg，IV q4–6h",
+            "疑乙二醇：thiamine 100 mg + pyridoxine 50–100 mg IV",
+            "立即照會毒物科與腎臟科；送驗甲醇/乙二醇濃度與尿液鏡檢（草酸鈣結晶）",
+        ]
+        avoid.append("勿因等待濃度報告而延遲 fomepizole — 解毒劑優先於確診")
+
+    elif 'MALA' in name:
+        give += [
+            "停用 metformin 及所有 nephrotoxin",
+            "依灌流指標滴定輸液復甦（乳酸清除、尿量、血壓），同時監測容積過載",
+            "照會腎臟科評估 HD（清除率優於 CRRT；血流動力不穩時用 CRRT）",
+            "同時覆蓋感染源：血液培養 ×2 後給經驗性抗生素（MALA 與敗血症常並存）",
+        ]
+        avoid += [
+            "勿一律套用固定低速輸液或一律 30 mL/kg bolus — 兩者皆非個別化",
+            "AKI 未穩定期避免非必要顯影劑",
+            "勿因 bicarbonate 輸注而延後透析評估",
+        ]
+
+    elif 'Type A' in name:
+        fluid = f"約 {int(weight*30)} mL" if weight else "30 mL/kg"
+        give += [
+            f"初始晶體輸液 {fluid}（平衡鹽液），之後以動態指標滴定",
+            "抗生素前完成血液培養 ×2；1 小時內給經驗性抗生素",
+            "首劑抗生素不因 AKI 減量；後續劑量再依腎功能調整",
+        ]
+        if aki:
+            avoid.append("AKI 急性期 Cr 尚未穩定，Cockcroft-Gault 估算不可靠，勿據此減量首劑")
+
+    elif '酮酸' in name:
+        give += [
+            "送驗血清 BHB 並每 2–4 小時追蹤（以 BHB 而非血糖判斷是否收酮）",
+            "Thiamine 100 mg IV 先於含糖輸液（酗酒者）",
+            "AKA：D5 含鹽輸液即可逆轉，多不需胰島素",
+            "eDKA：胰島素輸注必須與 dextrose 併行，維持血糖 150–200 mg/dL；停 SGLT2i",
+            "補鉀：K <3.3 時先補鉀再給胰島素；監測磷與鎂",
+        ]
+        avoid.append("勿因血糖正常而排除酮酸中毒")
+
+    elif '水楊酸' in name:
+        give += [
+            "送驗水楊酸濃度並每 2 小時追蹤至下降",
+            "鹼化尿液（碳酸氫鈉輸注，目標尿 pH 7.5–8）並積極補鉀",
+            "照會毒物科",
+        ]
+        avoid.append("避免插管；插管後過度換氣代償喪失可致急遽惡化")
+
+    elif '尿毒' in name:
+        give.append("照會腎臟科；依高鉀、容積過載、尿毒症狀決定 RRT 時機")
+
+    return give, avoid
+
+
+# ==================================================================
+# UI
+# ==================================================================
+st.title("🧪 AcidoScope")
+st.caption("高陰離子隙代謝性酸中毒鑑別輔助 · 決策輔助工具，不取代臨床判斷")
+
 with st.sidebar:
-    st.header("⚙️ 病患生理與院內 AI 參數")
-    age = st.number_input("病患年齡 (Age)", min_value=18, max_value=110, value=74)
-    weight = st.number_input("病患體重 (kg)", min_value=30.0, max_value=150.0, value=58.0)
-    
-    st.markdown("---")
-    st.subheader("🔗 院內生態系介面連動")
-    smart_prob = st.slider("中醫大【智血檢】菌血症預測機率 (%)", min_value=0, max_value=100, value=25, help="直接串接院內既有智血檢/智抗菌輸出結果")
-    alcohol_history = st.checkbox("病患有長期酗酒史 / 近期嘔吐禁食", value=False)
-    
-    st.caption("🛡️ 資安狀態：本地沙盒離線運行，未連外網公有 API。")
+    st.header("病患參數")
+    age = st.number_input("年齡", 18, 110, 65)
+    weight = st.number_input("體重 (kg)", 30.0, 200.0, 60.0)
+    alcohol_hx = st.checkbox("酗酒 / 近期禁食嘔吐")
+    sepsis_suspect = st.checkbox("臨床疑似感染")
+    st.caption("🛡️ 純本地運算，無外部 API。請勿貼入真實病人識別資料。")
 
-# 主畫面分欄
-col_input, col_display = st.columns([1.1, 1.3])
+col_l, col_r = st.columns([1, 1.4])
 
-with col_input:
-    st.subheader("📥 步驟一：貼上檢驗與藥歷（支援全選複製）")
-    st.info("💡 貼上文字後，系統自動於本地記憶體抹除身分證號、病歷號與姓名。")
-    
-    default_labs = """pH: 7.02, pCO2: 24, HCO3: 8, Lactate: 18.5
-Na: 138, Cl: 98, Cr: 4.2, BUN: 58, Glu: 165
-Measured_Osm: 318
-SBP: 108, HR: 84"""
-    
-    input_lab_raw = st.text_area("1. 抽血數據與生命徵象文字 (LIS 檢驗結果)", value=default_labs, height=120)
-    
-    default_meds = """病患健保雲端慢箋明細：
-1. Glucophage (Metformin) 500mg 1# tid ac
-2. Jardiance (Empagliflozin) 10mg 1# qd
-3. Diovan 80mg 1# qd
-4. Voltaren (Diclofenac) prn"""
-    
-    input_med_raw = st.text_area("2. 健保雲端藥歷文字塊 (Ctrl+V 貼上)", value=default_meds, height=130)
-    
-    # 執行本地端脫敏
-    safe_lab_text = local_deidentify(input_lab_raw)
-    safe_med_text = local_deidentify(input_med_raw)
-    
-    parsed_labs = parse_labs_input(safe_lab_text)
-    parsed_meds = parse_medications_input(safe_med_text)
-    
-    st.markdown("**🔍 系統背景解析狀態**：")
-    st.write(f"• 抽血參數擷取：`{len(parsed_labs)}` 項 | 藥歷關鍵高危標籤：`{[m[0] for m in parsed_meds]}`")
+with col_l:
+    st.subheader("輸入")
+    lab_raw = st.text_area(
+        "檢驗數值",
+        "pH: 7.02  HCO3: 8  Lactate: 18.5\nNa: 138  Cl: 98  Albumin: 2.8\nCr: 4.2  BUN: 58  Glu: 165",
+        height=130,
+    )
+    med_raw = st.text_area(
+        "用藥清單",
+        "Metformin 500mg tid\nEmpagliflozin 10mg qd\nValsartan 80mg qd",
+        height=100,
+    )
 
-with col_display:
-    st.subheader("⚡ 步驟二：秒級決策、EXTRIP 洗腎判定與防呆卡片")
-    
-    # 運算 Phase 1 結果
-    res = analyze_acidosis(parsed_labs, parsed_meds, smart_prob, alcohol_history)
-    crcl, orders, contra_orders = generate_dynamic_guideline_orders(res['etiology'], parsed_labs, weight, age)
-    
-    # 1. 四角鑑別診斷卡片
-    st.markdown("### ❶ 酸中毒四角病因秒鑑別")
-    if "MALA" in res['etiology'] or "毒性酒精" in res['etiology']:
-        st.error(f"🔴 **最可能病因：{res['etiology']} (信心度: {res['confidence']}%)**")
-    elif "AKA" in res['etiology'] or "eDKA" in res['etiology']:
-        st.warning(f"🟡 **最可能病因：{res['etiology']} (信心度: {res['confidence']}%)**")
+    labs = parse_labs(deidentify(lab_raw))
+    meds = parse_meds(deidentify(med_raw))
+    calc = compute(labs)
+
+    st.caption(f"擷取 {len(labs)} 項檢驗 · 標記藥物：{', '.join(m[0] for m in meds) or '無'}")
+
+    bits = []
+    if calc['ag'] is not None:
+        bits.append(f"AG {calc['ag']:.0f}")
+    if calc['ag_corr'] is not None:
+        bits.append(f"白蛋白校正後 AG {calc['ag_corr']:.0f}")
+    if calc['osm_gap'] is not None:
+        bits.append(f"Osm gap {calc['osm_gap']:.0f}")
     else:
-        st.info(f"🔵 **最可能病因：{res['etiology']} (信心度: {res['confidence']}%)**")
-        
-    for r in res['reasons']:
-        st.write(f"• **支持依據**：{r}")
-    for nr in res['negative_pertinence']:
-        st.write(f"• **反向排他**：{nr}")
-        
-    st.caption(f"生化指標：Anion Gap = {res['anion_gap']:.1f} mEq/L | 休克指數 = {res['shock_index']:.2f} | 滲透壓隙 Osm Gap = {res['osm_gap']:.1f} mOsm/kg")
+        bits.append("Osm gap 未測")
+    if calc['delta_ratio'] is not None:
+        bits.append(f"Δ/Δ {calc['delta_ratio']:.1f}")
+    st.info(" ｜ ".join(bits) if bits else "資料不足，無法計算 AG")
 
-    # 2. 洗腎急迫性判定
-    st.markdown("---")
-    st.markdown("### ❷ 緊急血液透析（RRT）急迫性判定")
-    if res['dialysis_level'] == "RED":
-        st.error(f"🚨 **{res['dialysis_title']}**")
-        st.write(res['dialysis_detail'])
+with col_r:
+    st.subheader("① 可能病因（可並存，非互斥）")
+    ranked = score_etiologies(labs, meds, calc, alcohol_hx, sepsis_suspect)
+
+    if not ranked:
+        st.warning("目前資料不足以支持任一特定病因。請補齊下方缺漏檢驗。")
+    for i, e in enumerate(ranked[:4]):
+        label = f"**{e['name']}** — 符合 {len(e['hits'])}/{e['total']} 項"
+        if i == 0:
+            st.error(label)
+        else:
+            st.markdown(label)
+        for h in e['hits']:
+            st.markdown(f"  • {h}")
+        st.caption(f"↳ {e['note']}")
+
+    top_names = [e['name'] for e in ranked[:2]]
+
+    st.subheader("② 尚未取得、會改變判讀的檢驗")
+    miss = missing_tests(labs)
+    if miss:
+        for m in miss:
+            st.warning(f"❓ {m}")
     else:
-        st.success(f"🟢 **{res['dialysis_title']}**")
-        st.write(res['dialysis_detail'])
+        st.success("關鍵檢驗均已取得")
 
-    # 3. 臨床處置防呆與禁忌攔截 (Poka-Yoke)
-    if contra_orders:
-        st.markdown("---")
-        st.markdown("### ❸ 處置禁忌與陷阱主動防禦 (Poka-Yoke)")
-        for co in contra_orders:
-            st.warning(f"⛔ {co}")
+    st.subheader("③ 體外清除 / RRT 評估")
+    urgent, consider = dialysis_assessment(labs, calc, top_names)
+    for u in urgent:
+        st.error(f"🚨 {u}")
+    for c in consider:
+        st.info(f"• {c}")
 
-# ==============================================================================
-# 步驟三：Phase 2 動態指引醫囑推薦與一鍵 SBAR 會診 (超越傳統長庚熱鍵)
-# ==============================================================================
-st.markdown("---")
-st.subheader("📋 步驟三：最新指引個人化醫囑推薦包（超越長庚死板熱鍵）")
-st.caption(f"系統已自動依據病患體重 `{weight} kg`、年齡 `{age} 歲`、肌酸酐 `{parsed_labs.get('Cr', 1.0)} mg/dL`，算出 CrCl 為 `{crcl} mL/min`，完成個人化劑量調校：")
+st.divider()
+st.subheader("④ 建議處置")
 
-col_ord1, col_ord2 = st.columns([1.2, 1])
+for name in top_names:
+    give, avoid = orders_for(name, labs, weight)
+    if not (give or avoid):
+        continue
+    with st.expander(f"針對「{name}」的處置", expanded=True):
+        for g in give:
+            st.markdown(f"✅ {g}")
+        for a in avoid:
+            st.markdown(f"⛔ {a}")
 
-with col_ord1:
-    st.markdown("#### ☑️ 建議勾選開立醫囑 (Guideline Orders)")
-    selected_orders = []
-    for idx, (ord_title, ord_desc) in enumerate(orders):
-        chk = st.checkbox(f"{ord_title}", value=True, key=f"chk_{idx}")
-        st.caption(f"&nbsp;&nbsp;&nbsp;&nbsp;↳ 實證指引來源: *{ord_desc}*")
-        if chk:
-            selected_orders.append(ord_title)
+st.divider()
+with st.expander("📋 會診用摘要（自行核對後使用）"):
+    st.text_area(
+        "SBAR",
+        f"""S：高陰離子隙代謝性酸中毒，鑑別診斷以 {' / '.join(top_names) or '待確認'} 為優先。
+B：{age} 歲，{weight} kg。用藥標記：{', '.join(m[0] for m in meds) or '無'}。
+A：pH {labs.get('pH','-')}、HCO3 {labs.get('HCO3','-')}、Lactate {labs.get('Lactate','-')}、
+   AG {f"{calc['ag']:.0f}" if calc['ag'] is not None else '-'}、
+   Osm gap {f"{calc['osm_gap']:.0f}" if calc['osm_gap'] is not None else '未測'}、
+   Cr {labs.get('Cr','-')}。
+   未取得檢驗：{'；'.join(miss) or '無'}
+R：{'；'.join(urgent) if urgent else '目前無立即體外清除之絕對指徵，建議共同評估。'}
+（AcidoScope 自動生成草稿，內容須由醫師核對）""",
+        height=200,
+    )
 
-with col_ord2:
-    st.markdown("#### 🚀 一鍵 SBAR 腎臟科急會診單 (可直接複製貼入 HIS)")
-    sbar_text = f"""【急診-腎臟科緊急透析會診 (智酸析 AcidoScope 自動生成)】
-S (現況): 病患呈嚴重代謝性酸中毒，高度疑似 {res['etiology']}，已達 EXTRIP 緊急血液透析指引準則。
-B (背景): 年齡 {age} 歲，體重 {weight} kg。藥歷檢出: {[m[0] for m in parsed_meds]}。
-A (評估): 
-  - 氣體分析: pH {parsed_labs.get('pH','-')}, HCO3 {parsed_labs.get('HCO3','-')}, Lactate {parsed_labs.get('Lactate','-')} mmol/L
-  - 生化數據: AG {res['anion_gap']:.1f}, Cr {parsed_labs.get('Cr','-')} mg/dL (CrCl {crcl} mL/min), Osm Gap {res['osm_gap']:.1f}
-  - 智血檢菌血症率: {smart_prob}% | 判定: {res['dialysis_title']}
-R (建議): 請求腎臟科醫師緊急前來急診評估，儘速安排緊急床邊血液透析 (HD/CRRT)。"""
-
-    st.text_area("SBAR 文字框", value=sbar_text, height=220)
-
-st.success("✅ 臨床應用完整閉環：從「抽血秒鑑別」➔「EXTRIP 決定洗不洗」➔「防呆攔截」➔「指引醫囑算好劑量」➔「一鍵 SBAR 會診」，完全不用改動院內 HIS！")
+st.caption("依據：EXTRIP workgroup（metformin、甲醇、水楊酸）、ACMT 毒醇處置、"
+           "Surviving Sepsis Campaign、KDIGO AKI 及 STARRT-AKI/AKIKI。請以最新原文與院內規範為準。")
