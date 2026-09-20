@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>值班 03:00</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#09121A; --panel:#0F1F2C; --panel-2:#16303F; --line:#254753;
+  --text:#DEEAEF; --muted:#85A1AD;
+  --sodium:#F0A83C; --trace:#57D9A3; --alarm:#EE6A58; --cool:#6FB3DE; --violet:#9B7BD4;
+  --skin:#E0AE83; --sheet:#1D3C4C; --blanket:#2F6079; --wall:#132836;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ink:#E6ECEF; --panel:#FFFFFF; --panel-2:#EFF4F7; --line:#C6D5DC;
+    --text:#0E1D26; --muted:#557282;
+    --sodium:#A5620B; --trace:#17754F; --alarm:#B23325; --cool:#2A6795; --violet:#6B4EA8;
+    --sheet:#DAE6EC; --blanket:#A6C4D4; --wall:#E2EAEF;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:
+  radial-gradient(1200px 500px at 50% -10%, color-mix(in srgb,var(--cool) 9%,transparent), transparent),
+  var(--ink);
+  color:var(--text);font-family:"Noto Sans TC",system-ui,-apple-system,sans-serif;line-height:1.6}
+.wrap{max-width:1160px;margin:0 auto;padding:22px 16px 60px}
+h1{font-size:1.55rem;margin:0 0 4px;letter-spacing:.01em}
+h2{font-size:.95rem;margin:0 0 10px}
+p{margin:0 0 12px;max-width:68ch}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--sodium);outline-offset:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent) inset}
+.card+.card{margin-top:14px}
+.note{font-size:.86rem;color:var(--muted)}
+.hide{display:none}
+
+.clock{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}
+.clock .t{font-family:"IBM Plex Mono",monospace;font-size:clamp(2.3rem,8vw,3.2rem);
+  font-weight:600;line-height:1;color:var(--sodium);font-variant-numeric:tabular-nums;
+  text-shadow:0 0 22px color-mix(in srgb,var(--sodium) 35%,transparent)}
+.clock .left{color:var(--muted);font-size:.88rem}
+.queue{margin-left:auto;font-size:.82rem;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.queue b{color:var(--alarm);font-family:"IBM Plex Mono",monospace}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px;width:100%}
+.bar i{display:block;height:100%;background:var(--sodium);transition:width .4s ease}
+.bar.crit i{background:var(--alarm)}
+
+.grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:920px){.grid{grid-template-columns:430px 1fr}}
+
+.scene{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.scene svg{display:block;width:100%;height:auto}
+.mon{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 12px;
+  background:var(--panel-2);border-top:1px solid var(--line)}
+.ecgbox{position:relative;border-radius:7px;overflow:hidden;height:58px;
+  background:
+    repeating-linear-gradient(to right,color-mix(in srgb,var(--trace) 9%,transparent) 0 1px,transparent 1px 12px),
+    repeating-linear-gradient(to bottom,color-mix(in srgb,var(--trace) 9%,transparent) 0 1px,transparent 1px 12px),
+    radial-gradient(120% 90% at 50% 0%,#0C2029,#060F15);
+  box-shadow:0 0 18px color-mix(in srgb,var(--trace) 14%,transparent) inset,
+             0 0 0 1px color-mix(in srgb,var(--trace) 10%,transparent) inset}
+.ecgbox svg{height:58px;position:relative;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--trace) 55%,transparent))}
+.nums{display:grid;grid-template-columns:repeat(3,minmax(54px,1fr));gap:6px;align-content:center}
+.v{background:linear-gradient(#0C2029,#060F15);border-radius:6px;padding:4px 8px;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--trace) 12%,transparent) inset}
+.v span{display:block;font-size:.62rem;color:var(--muted);letter-spacing:.04em}
+.v b{font-family:"IBM Plex Mono",monospace;font-size:1rem;font-weight:600;color:var(--trace);
+  font-variant-numeric:tabular-nums}
+.v.warn b{color:var(--sodium)} .v.bad b{color:var(--alarm)}
+.v.bad{animation:blip 1.05s steps(2) infinite}
+@keyframes blip{50%{background:color-mix(in srgb,var(--alarm) 26%,#060F15)}}
+.findings{padding:10px 13px;border-top:1px solid var(--line);font-size:.85rem}
+.findings div{margin-bottom:3px;display:flex;gap:8px;align-items:baseline}
+.findings i{width:7px;height:7px;border-radius:50%;background:var(--sodium);flex:0 0 7px;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--sodium) 22%,transparent)}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{background:transparent;color:var(--muted);border:1px solid var(--line);
+  border-radius:999px;padding:5px 14px;font-size:.9rem;transition:.15s}
+.tabs button[aria-selected="true"]{background:var(--panel-2);color:var(--text);border-color:var(--cool)}
+.acts{display:grid;gap:7px}
+@media(min-width:540px){.acts{grid-template-columns:1fr 1fr}}
+.act{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+  border-radius:9px;padding:9px 12px;text-align:left;font-size:.92rem;transition:.15s}
+.act:hover:not(:disabled){border-color:var(--cool);transform:translateY(-1px)}
+.act:disabled{opacity:.38;cursor:default}
+.act em{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:.76rem;
+  color:var(--sodium);white-space:nowrap}
+.log{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;max-height:320px;overflow-y:auto}
+.entry{display:flex;gap:11px;padding:7px 0;border-bottom:1px solid var(--line)}
+.entry:last-child{border-bottom:0}
+.entry .ts{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--muted);flex:0 0 44px}
+.entry .body{font-size:.92rem}
+.entry .body b{display:block;font-size:.83rem;color:var(--cool);font-weight:500}
+.empty{color:var(--muted);font-size:.9rem;padding:6px 0}
+.cta{background:var(--sodium);color:#09121A;border:0;border-radius:9px;padding:10px 20px;
+  font-weight:700;margin-top:14px}
+.cta.ghost{background:transparent;color:var(--text);border:1px solid var(--line);font-weight:500}
+.chk{display:flex;gap:9px;align-items:flex-start;padding:8px 11px;border-radius:8px;
+  background:var(--panel-2);margin-bottom:5px;font-size:.93rem}
+.chk input{margin-top:5px;accent-color:var(--sodium)}
+select{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+  border-radius:8px;padding:10px;font-family:inherit;font-size:1rem}
+label.fld{display:block;font-size:.84rem;color:var(--muted);margin:13px 0 6px}
+.verdict{border-left:3px solid var(--line);padding:2px 0 2px 14px;margin:14px 0}
+.verdict.good{border-color:var(--trace)} .verdict.bad{border-color:var(--alarm)}
+.verdict h3{margin:0 0 4px;font-size:1.05rem}
+@keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.075)}}
+@keyframes mouthb{0%,100%{transform:scaleY(.72)}50%{transform:scaleY(1.35)}}
+@keyframes puff{0%{opacity:0;transform:translate(0,0)}30%{opacity:.55}100%{opacity:0;transform:translate(11px,-13px)}}
+@keyframes flick{0%,96%,100%{opacity:0}97%{opacity:.16}98.5%{opacity:.05}}
+@keyframes blinkred{0%,49%{opacity:.25}50%,100%{opacity:1}}
+@keyframes walk{0%{transform:translateX(0)}100%{transform:translateX(96px)}}
+@keyframes flutter{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(-34px,7px) rotate(-28deg)}}
+@keyframes drip{0%{transform:translateY(0);opacity:0}15%{opacity:.9}85%{opacity:.9}100%{transform:translateY(30px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="intro">
+  <h1>值班 03:00</h1>
+  <p class="sub">一個病人，九十分鐘。走廊上還有十幾個在等。</p>
+  <div class="card">
+    <p>病人推進來時，你只有主訴、一張臉、和監視器上的數字。<strong>其他什麼都沒有。</strong></p>
+    <p>每個動作都吃掉時鐘上的時間。時間走，病人的樣子跟著變——臉色、呼吸、監視器。驗一堆不會改變處置的東西，代價是你來不及救他。</p>
+    <p class="note">結算看的是推理過程，不是速度。有些病人即使你每一步都做對，還是會死。</p>
+    <button class="cta" id="start">接班</button>
+  </div>
+</section>
+
+<section id="game" class="hide">
+  <div class="clock">
+    <div class="t" id="clock">00:00</div>
+    <div class="left">已耗時 / 剩餘 <b id="left">90</b> 分鐘</div>
+    <div class="queue">走廊候診 <b id="queue">11</b> 人</div>
+    <div class="bar" id="bar"><i style="width:0%"></i></div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="scene">
+        <svg viewBox="0 0 420 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="急診觀察區的病人">
+          <defs>
+            <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--wall)"/>
+              <stop offset="1" stop-color="var(--panel)"/>
+            </linearGradient>
+            <linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--panel)"/>
+              <stop offset="1" stop-color="var(--ink)"/>
+            </linearGradient>
+            <linearGradient id="gSheet" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--sheet)"/>
+              <stop offset="1" stop-color="var(--panel-2)"/>
+            </linearGradient>
+            <linearGradient id="gBlanket" x1="0" y1="0" x2="0.25" y2="1">
+              <stop offset="0" stop-color="var(--blanket)"/>
+              <stop offset="1" stop-color="var(--panel-2)"/>
+            </linearGradient>
+            <linearGradient id="gFluid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--cool)" stop-opacity=".18"/>
+              <stop offset="1" stop-color="var(--cool)" stop-opacity=".55"/>
+            </linearGradient>
+            <radialGradient id="gLamp" cx="0.5" cy="0" r="1">
+              <stop offset="0" stop-color="var(--sodium)" stop-opacity=".22"/>
+              <stop offset=".55" stop-color="var(--sodium)" stop-opacity=".07"/>
+              <stop offset="1" stop-color="var(--sodium)" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="gVig" cx="0.42" cy="0.55" r="0.78">
+              <stop offset=".55" stop-color="var(--ink)" stop-opacity="0"/>
+              <stop offset="1" stop-color="var(--ink)" stop-opacity=".6"/>
+            </radialGradient>
+            <radialGradient id="gCheek" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stop-color="#000" stop-opacity=".16"/>
+              <stop offset="1" stop-color="#000" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="fSoft" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="4"/>
+            </filter>
+            <filter id="fBlur2" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="1.6"/>
+            </filter>
+          </defs>
+
+          <!-- ===== 走廊（背景的混亂） ===== -->
+          <rect x="0" y="0" width="420" height="72" fill="url(#gWall)"/>
+          <rect x="120" y="0" width="180" height="5" rx="2.5" fill="var(--sodium)" opacity=".3"/>
+          <rect x="0" y="0" width="420" height="120" fill="url(#gLamp)" pointer-events="none"/>
+          <g opacity=".45" filter="url(#fBlur2)">
+            <rect x="14" y="30" width="64" height="20" rx="5" fill="var(--sheet)" stroke="var(--line)"/>
+            <ellipse cx="34" cy="40" rx="11" ry="7" fill="var(--skin)" opacity=".8"/>
+            <rect x="46" y="33" width="28" height="14" rx="4" fill="var(--blanket)"/>
+            <rect x="96" y="30" width="64" height="20" rx="5" fill="var(--sheet)" stroke="var(--line)"/>
+            <ellipse cx="116" cy="40" rx="11" ry="7" fill="var(--skin)" opacity=".8"/>
+            <rect x="128" y="33" width="28" height="14" rx="4" fill="var(--blanket)"/>
+            <line x1="86" y1="18" x2="86" y2="52" stroke="var(--line)" stroke-width="2"/>
+            <rect x="81" y="18" width="10" height="13" rx="2" fill="url(#gFluid)"/>
+          </g>
+          <g id="nurse" opacity=".85" style="animation:walk 9s linear infinite">
+            <ellipse cx="188" cy="62" rx="14" ry="3" fill="var(--ink)" opacity=".35"/>
+            <circle cx="186" cy="30" r="7" fill="var(--skin)"/>
+            <path d="M180 24 q6 -7 12 0 q-6 -3 -12 0z" fill="#3A2A24" opacity=".7"/>
+            <path d="M179 40 q7 -6 14 0 l3 18 h-20 z" fill="var(--trace)" opacity=".85"/>
+            <path d="M179 40 q7 -6 14 0 l1 6 h-16 z" fill="#FFF" opacity=".12"/>
+            <rect x="196" y="44" width="12" height="9" rx="2" fill="var(--panel)" stroke="var(--line)"/>
+            <path d="M172 34 h-9 M170 42 h-12" stroke="var(--muted)" stroke-width="1.4" opacity=".5"/>
+          </g>
+          <g style="animation:flutter 3.4s ease-in-out infinite alternate">
+            <rect x="268" y="22" width="13" height="17" rx="1.5" fill="#E8EEF0" opacity=".85"/>
+            <path d="M270 26 h9 M270 30 h9 M270 34 h6" stroke="var(--muted)" stroke-width="1"/>
+          </g>
+          <g style="animation:flutter 4.6s .6s ease-in-out infinite alternate">
+            <rect x="292" y="40" width="11" height="14" rx="1.5" fill="#E8EEF0" opacity=".6"/>
+          </g>
+          <circle cx="248" cy="12" r="9" fill="var(--alarm)" opacity=".25" filter="url(#fSoft)"
+                  style="animation:blinkred 1.3s steps(2) infinite"/>
+          <circle cx="248" cy="12" r="5" fill="var(--alarm)" style="animation:blinkred 1.3s steps(2) infinite"/>
+          <circle cx="352" cy="32" r="17" fill="var(--panel)" stroke="var(--line)" stroke-width="2"/>
+          <circle cx="352" cy="32" r="13" fill="none" stroke="var(--line)" stroke-width=".8" opacity=".6"/>
+          <line x1="352" y1="32" x2="352" y2="21" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="352" y1="32" x2="361" y2="32" stroke="var(--sodium)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="352" cy="32" r="2" fill="var(--sodium)"/>
+          <text x="382" y="28" font-size="8" fill="var(--muted)" font-family="monospace">床 07</text>
+          <text x="382" y="40" font-size="8" fill="var(--muted)" font-family="monospace">觀察區</text>
+
+          <!-- ===== 地板 ===== -->
+          <rect x="0" y="72" width="420" height="196" fill="url(#gFloor)"/>
+          <line x1="0" y1="72" x2="420" y2="72" stroke="var(--line)" stroke-width="2"/>
+          <g opacity=".06" stroke="var(--text)" stroke-width=".7" fill="none">
+            <path d="M-40 268 L120 74 M60 268 L178 74 M170 268 L236 74 M290 268 L296 74 M410 268 L356 74"/>
+          </g>
+
+          <!-- 點滴架 -->
+          <line x1="30" y1="86" x2="30" y2="226" stroke="var(--line)" stroke-width="3"/>
+          <ellipse cx="30" cy="228" rx="13" ry="3.5" fill="var(--line)" opacity=".7"/>
+          <rect x="20" y="88" width="20" height="30" rx="4" fill="var(--panel-2)" stroke="var(--line)"/>
+          <rect x="22" y="94" width="16" height="22" rx="3" fill="url(#gFluid)"/>
+          <rect x="23" y="95" width="4" height="20" rx="2" fill="#FFF" opacity=".18"/>
+          <circle cx="30" cy="124" r="1.6" fill="var(--cool)" opacity=".9"
+                  style="animation:drip 1.8s linear infinite"/>
+          <path d="M30 118 V156 L94 178" stroke="var(--cool)" stroke-width="1.4" fill="none" opacity=".3"/>
+
+          <!-- 急救車 -->
+          <g opacity=".9">
+            <ellipse cx="388" cy="224" rx="26" ry="5" fill="var(--ink)" opacity=".35"/>
+            <rect x="366" y="150" width="44" height="64" rx="5" fill="var(--panel-2)" stroke="var(--line)"/>
+            <rect x="366" y="150" width="44" height="8" rx="4" fill="#FFF" opacity=".07"/>
+            <rect x="371" y="158" width="34" height="11" rx="2" fill="var(--alarm)" opacity=".55"/>
+            <rect x="371" y="174" width="34" height="11" rx="2" fill="var(--sodium)" opacity=".45"/>
+            <rect x="371" y="190" width="34" height="11" rx="2" fill="var(--cool)" opacity=".4"/>
+            <path d="M375 163 h26 M375 179 h26 M375 195 h26" stroke="var(--ink)" stroke-width=".8" opacity=".3"/>
+            <circle cx="376" cy="219" r="4" fill="var(--line)"/><circle cx="400" cy="219" r="4" fill="var(--line)"/>
+          </g>
+
+          <!-- 病床 -->
+          <ellipse cx="200" cy="250" rx="168" ry="10" fill="var(--ink)" opacity=".4" filter="url(#fSoft)"/>
+          <rect x="48" y="104" width="306" height="118" rx="12" fill="url(#gSheet)" stroke="var(--line)" stroke-width="1.5"/>
+          <rect x="48" y="104" width="306" height="7" rx="3.5" fill="#FFF" opacity=".09"/>
+          <rect x="56" y="112" width="74" height="102" rx="14" fill="var(--panel-2)" opacity=".8"/>
+          <rect x="60" y="116" width="66" height="94" rx="12" fill="#FFF" opacity=".06"/>
+          <g stroke="var(--line)" stroke-width="1" fill="none" opacity=".5">
+            <path d="M150 210 q14 -7 28 0 q14 7 28 0"/>
+            <path d="M242 212 q16 -6 32 0 q16 6 30 0"/>
+            <path d="M138 114 q12 6 24 0"/>
+          </g>
+          <g stroke="var(--line)" stroke-width="2.5" opacity=".4" fill="none" stroke-linecap="round">
+            <path d="M150 104 v-18 h64 v18"/>
+            <path d="M150 95 h64"/>
+          </g>
+          <line x1="48" y1="222" x2="48" y2="246" stroke="var(--line)" stroke-width="4"/>
+          <line x1="350" y1="222" x2="350" y2="246" stroke="var(--line)" stroke-width="4"/>
+          <circle cx="48" cy="248" r="4" fill="var(--line)"/><circle cx="350" cy="248" r="4" fill="var(--line)"/>
+
+          <g id="patient">
+            <g opacity=".3" filter="url(#fSoft)" fill="var(--ink)">
+              <rect x="150" y="196" width="180" height="16" rx="8"/>
+              <ellipse cx="106" cy="186" rx="30" ry="8"/>
+            </g>
+            <!-- 腿 -->
+            <rect class="skin" x="226" y="132" width="106" height="25" rx="12"/>
+            <rect class="skin" x="226" y="166" width="106" height="25" rx="12"/>
+            <path d="M226 150 h106 M226 184 h106" stroke="#000" stroke-width="5" opacity=".07" stroke-linecap="round"/>
+            <path d="M232 137 h94 M232 171 h94" stroke="#FFF" stroke-width="3" opacity=".12" stroke-linecap="round"/>
+            <g id="lay-lesion" opacity="0">
+              <ellipse cx="290" cy="178" rx="32" ry="12" fill="#6E2A66"/>
+              <ellipse cx="290" cy="178" rx="26" ry="9" fill="#8E3E84" opacity=".5"/>
+              <ellipse cx="275" cy="175" rx="7.5" ry="5.5" fill="#A55F9B" opacity=".9"/>
+              <ellipse cx="274" cy="173.5" rx="3" ry="2" fill="#E6CFE2" opacity=".55"/>
+              <ellipse cx="299" cy="181" rx="6" ry="4.5" fill="#A55F9B" opacity=".9"/>
+              <ellipse cx="311" cy="174" rx="5" ry="4" fill="#C795BE" opacity=".75"/>
+              <path d="M262 186 q10 5 20 0" stroke="#3E1439" stroke-width="1.4" fill="none"/>
+            </g>
+            <!-- 手臂 -->
+            <rect class="skin" x="148" y="118" width="84" height="17" rx="8.5"/>
+            <rect class="skin" x="148" y="188" width="84" height="17" rx="8.5"/>
+            <path d="M154 122 h72 M154 192 h72" stroke="#FFF" stroke-width="2.5" opacity=".12" stroke-linecap="round"/>
+            <rect x="160" y="119" width="13" height="15" rx="2" fill="#F2F6F7" opacity=".55"/>
+            <!-- 軀幹（呼吸） -->
+            <g id="chest" style="transform-origin:190px 160px">
+              <rect class="skin" x="144" y="126" width="98" height="68" rx="22"/>
+              <path d="M150 132 h86 v22 h-86 z" fill="var(--panel-2)" opacity=".3"/>
+              <ellipse cx="190" cy="160" rx="52" ry="36" fill="url(#gCheek)"/>
+              <path d="M152 136 q38 -8 76 0" stroke="#FFF" stroke-width="4" opacity=".1" fill="none" stroke-linecap="round"/>
+              <circle cx="164" cy="144" r="3.4" fill="#F2F6F7" opacity=".7"/>
+              <circle cx="218" cy="144" r="3.4" fill="#F2F6F7" opacity=".7"/>
+              <circle cx="190" cy="182" r="3.4" fill="#F2F6F7" opacity=".7"/>
+              <path d="M164 144 q-14 10 -18 26 M218 144 q16 12 20 30" stroke="var(--trace)"
+                    stroke-width="1" fill="none" opacity=".45"/>
+            </g>
+            <g id="lay-mottle" opacity="0">
+              <circle cx="248" cy="142" r="6.5" fill="#7E4B70" opacity=".55"/>
+              <circle cx="266" cy="150" r="8" fill="#7E4B70" opacity=".45"/>
+              <circle cx="256" cy="178" r="7" fill="#7E4B70" opacity=".5"/>
+              <circle cx="276" cy="186" r="5" fill="#7E4B70" opacity=".4"/>
+              <circle cx="236" cy="188" r="6" fill="#7E4B70" opacity=".45"/>
+            </g>
+            <g id="lay-dry" opacity="0">
+              <path d="M158 138 q8 4 16 0 M158 178 q8 4 16 0 M186 158 q8 4 16 0"
+                    stroke="#A07C5C" stroke-width="1.3" fill="none" opacity=".85"/>
+            </g>
+            <!-- 棉被 -->
+            <rect id="blanket" x="196" y="122" width="152" height="84" rx="11"
+                  fill="url(#gBlanket)" stroke="var(--line)"/>
+            <g id="blanketfold">
+              <path d="M210 122 v84 M240 122 v84" stroke="var(--line)" opacity=".35" fill="none"/>
+              <path d="M196 132 h152" stroke="#FFF" opacity=".1" stroke-width="3" fill="none"/>
+              <path d="M270 122 q6 42 0 84 M304 122 q-5 42 0 84" stroke="var(--ink)" opacity=".12"
+                    stroke-width="3" fill="none"/>
+            </g>
+            <!-- 頸 -->
+            <rect class="skin" x="128" y="148" width="22" height="24" rx="7"/>
+            <path d="M128 168 h22" stroke="#000" stroke-width="5" opacity=".08" stroke-linecap="round"/>
+            <!-- 頭 -->
+            <ellipse id="head" class="skin" cx="106" cy="160" rx="31" ry="28"/>
+            <ellipse cx="106" cy="163" rx="29" ry="24" fill="url(#gCheek)"/>
+            <!-- 俯視：臉的軸線為左右向（額頭在左、下巴朝右接頸部） -->
+            <g id="face" transform="rotate(-90 106 160)">
+            <ellipse cx="106" cy="150" rx="20" ry="11" fill="#FFF" opacity=".09"/>
+            <path d="M78 150 q10 -18 28 -18 q18 0 28 18 q-14 -8 -28 -8 q-14 0 -28 8 z"
+                  fill="#3A2A24" opacity=".75"/>
+            <path d="M86 145 q9 -11 20 -11 q11 0 20 11" stroke="#6A5247" stroke-width="1.8"
+                  fill="none" opacity=".4"/>
+            <g id="eyesOpen">
+              <ellipse cx="96" cy="154" rx="6.5" ry="5" fill="#F4F7F8"/>
+              <ellipse cx="116" cy="154" rx="6.5" ry="5" fill="#F4F7F8"/>
+              <circle id="pupA" cx="96" cy="154" r="2.6" fill="#1E2E38"/>
+              <circle id="pupB" cx="116" cy="154" r="2.6" fill="#1E2E38"/>
+              <circle cx="97" cy="152.6" r="1" fill="#FFF" opacity=".8"/>
+              <circle cx="117" cy="152.6" r="1" fill="#FFF" opacity=".8"/>
+              <path d="M89.5 152 q6.5 -4 13 0 M109.5 152 q6.5 -4 13 0" stroke="#000" stroke-width="1.2"
+                    fill="none" opacity=".35"/>
+              <path d="M90 146 q6 -3 12 0 M110 146 q6 -3 12 0" stroke="#3A2A24" stroke-width="1.5" fill="none"/>
+            </g>
+            <g id="eyesShut" opacity="0">
+              <path d="M90 155 q6 4 12 0 M110 155 q6 4 12 0" stroke="#1E2E38" stroke-width="1.8"
+                    fill="none" stroke-linecap="round"/>
+              <path d="M90 146 q6 -3 12 0 M110 146 q6 -3 12 0" stroke="#3A2A24" stroke-width="1.5" fill="none"/>
+            </g>
+            <path d="M106 160 v6 q0 2 3 2" stroke="#B4835E" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <g id="mouthG" style="transform-origin:106px 176px">
+              <ellipse id="mouth" cx="106" cy="176" rx="8" ry="4.5" fill="#8E4B4A"/>
+              <ellipse cx="106" cy="177.5" rx="5.5" ry="2.4" fill="#5B2B2E" opacity=".8"/>
+              <path d="M99 174 q7 -3 14 0" stroke="#000" stroke-width="1" fill="none" opacity=".25"/>
+            </g>
+            <!-- 鼻導管 -->
+            <path d="M101 165 q-14 6 -19 17" stroke="var(--cool)" stroke-width="1.5" fill="none" opacity=".4"/>
+            <path d="M111 165 q14 6 19 17" stroke="var(--cool)" stroke-width="1.5" fill="none" opacity=".4"/>
+            <circle cx="102" cy="164" r="1.3" fill="var(--cool)" opacity=".7"/>
+            <circle cx="110" cy="164" r="1.3" fill="var(--cool)" opacity=".7"/>
+            <g id="lay-sweat" opacity="0">
+              <circle cx="80" cy="140" r="2.8" fill="var(--cool)" opacity=".85"/>
+              <circle cx="80" cy="139" r="1" fill="#FFF" opacity=".7"/>
+              <circle cx="132" cy="144" r="2.2" fill="var(--cool)" opacity=".75"/>
+              <circle cx="128" cy="180" r="2.5" fill="var(--cool)" opacity=".8"/>
+              <circle cx="92" cy="134" r="1.8" fill="var(--cool)" opacity=".6"/>
+            </g>
+            </g>
+            <!-- 呼氣（從右側口部飄出） -->
+            <g id="lay-breath" opacity="0">
+              <circle cx="132" cy="150" r="3.4" fill="var(--cool)" opacity=".45"/>
+              <circle cx="139" cy="142" r="2.2" fill="var(--cool)" opacity=".28"/>
+            </g>
+          </g>
+          <g id="pins"></g>
+          <rect x="0" y="0" width="420" height="268" fill="url(#gVig)" pointer-events="none"/>
+          <rect x="0" y="0" width="420" height="268" fill="#FFF3D6" style="animation:flick 7s linear infinite" pointer-events="none"/>
+        </svg>
+
+        <div class="mon">
+          <div class="ecgbox">
+            <svg viewBox="0 0 240 58" preserveAspectRatio="none">
+              <g id="ecgScroll">
+                <polyline id="ecg1" points="" fill="none" stroke="var(--trace)" stroke-width="1.7"/>
+                <polyline id="ecg2" points="" fill="none" stroke="var(--trace)" stroke-width="1.7" transform="translate(240,0)"/>
+              </g>
+            </svg>
+          </div>
+          <div class="nums" id="nums"></div>
+        </div>
+        <div class="findings" id="findings"></div>
+      </div>
+
+      <div class="card">
+        <h2 id="ptname">病人</h2>
+        <p id="ptstory" style="font-size:.92rem"></p>
+        <button class="cta" id="decide">下處置</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="tabs" role="tablist" id="tabs"></div>
+        <div class="acts" id="acts"></div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="decision" class="hide">
+  <h1>下處置</h1>
+  <p class="sub" id="dectime"></p>
+  <div class="card">
+    <label class="fld" for="dx">你認為最可能的病因</label>
+    <select id="dx"></select>
+    <label class="fld">現在要做的處置（可複選）</label>
+    <div id="txlist"></div>
+    <button class="cta" id="commit">執行並結束班別</button>
+    <button class="cta ghost" id="back">回去再查一下</button>
+  </div>
+</section>
+
+<section id="debrief" class="hide">
+  <h1>結算</h1>
+  <div id="debriefBody"></div>
+  <button class="cta" id="again">換一個病人</button>
+</section>
+</div>
+
+<script>
+const ACTIONS=[
+ {id:'hx_med',c:'問診',label:'用藥史（含自費、保健品）',t:3},
+ {id:'hx_etoh',c:'問診',label:'飲酒史與最後一次飲酒',t:2},
+ {id:'hx_course',c:'問診',label:'近三天病程與進食',t:3},
+ {id:'hx_vision',c:'問診',label:'視覺、聽覺症狀',t:2},
+ {id:'hx_psy',c:'問診',label:'情緒狀態與自傷可能',t:3},
+ {id:'hx_travel',c:'問診',label:'旅遊史與接觸史',t:2},
+ {id:'ex_resp',c:'理學',label:'呼吸型態與深度',t:1},
+ {id:'ex_perf',c:'理學',label:'末梢灌流、皮膚溫度',t:1},
+ {id:'ex_cardio',c:'理學',label:'心肺聽診',t:3},
+ {id:'ex_abd',c:'理學',label:'腹部觸診',t:3},
+ {id:'ex_skin',c:'理學',label:'掀開被子、翻身看全身',t:4},
+ {id:'ex_neuro',c:'理學',label:'神經學與瞳孔',t:3},
+ {id:'ex_vital',c:'理學',label:'重測生命徵象',t:1},
+ {id:'lb_gas',c:'檢驗',label:'血液氣體分析',t:5},
+ {id:'lb_lyte',c:'檢驗',label:'電解質（可算 AG）',t:10},
+ {id:'lb_lac',c:'檢驗',label:'Lactate',t:5},
+ {id:'lb_renal',c:'檢驗',label:'BUN / Creatinine',t:10},
+ {id:'lb_glu',c:'檢驗',label:'血糖（床邊）',t:1},
+ {id:'lb_bhb',c:'檢驗',label:'血清 β-hydroxybutyrate',t:10},
+ {id:'lb_osm',c:'檢驗',label:'血清滲透壓',t:15},
+ {id:'lb_etoh',c:'檢驗',label:'血中 ethanol 濃度',t:15},
+ {id:'lb_sal',c:'檢驗',label:'水楊酸濃度',t:20},
+ {id:'lb_alb',c:'檢驗',label:'Albumin',t:10},
+ {id:'lb_cbc',c:'檢驗',label:'CBC / 分類',t:10},
+ {id:'lb_cx',c:'檢驗',label:'血液培養 ×2',t:3},
+ {id:'lb_ua',c:'檢驗',label:'尿液常規與鏡檢',t:15},
+ {id:'lb_ecg',c:'影像',label:'12 導程心電圖',t:3},
+ {id:'lb_cxr',c:'影像',label:'胸部 X 光',t:12},
+ {id:'lb_ct',c:'影像',label:'腦部電腦斷層',t:25},
+ {id:'lb_us',c:'影像',label:'床邊超音波',t:8},
+];
+const CATS=['問診','理學','檢驗','影像'];
+const TX=[
+ {id:'fluid',label:'晶體輸液復甦（依灌流滴定）'},
+ {id:'abx',label:'經驗性抗生素（培養後）'},
+ {id:'fome',label:'Fomepizole'},
+ {id:'hd',label:'緊急血液透析'},
+ {id:'bicarb',label:'碳酸氫鈉輸注 + 鹼化尿液'},
+ {id:'ins',label:'胰島素輸注 + dextrose 併行'},
+ {id:'thia',label:'Thiamine（含糖輸液前）'},
+ {id:'stopmet',label:'停用 metformin 與腎毒性藥物'},
+ {id:'intub',label:'插管（預防性保護呼吸道）'},
+ {id:'source',label:'外科會診找感染源'},
+ {id:'obs',label:'先觀察，暫不處置'},
+];
+const CASES=[
+{id:'mala',name:'78 歲女性',dx:'MALA（metformin 相關乳酸酸中毒）',
+ story:'因「全身無力、喘」被家屬送來。說話有氣無力，回答斷斷續續。',
+ v0:{ph:7.08,hr:112,sbp:88,rr:32,spo2:96,gcs:13},
+ drift:{ph:-0.004,hr:.4,sbp:-.35,rr:.12,spo2:-.02,gcs:-.02},
+ deadline:70,
+ reveal:{ex_perf:'lay-mottle',ex_skin:'lay-dry',ex_resp:'lay-breath'},
+ pins:{ex_perf:[300,148,'花斑、末梢冰冷'],ex_resp:[126,136,'Kussmaul 深快呼吸'],ex_abd:[214,160,'腸音亢進']},
+ useful:['hx_med','hx_course','lb_gas','lb_lyte','lb_lac','lb_renal','lb_glu','ex_perf','ex_vital','lb_alb','lb_cx','ex_resp'],
+ key:['hx_med','lb_lac','lb_renal'],need:['stopmet','hd','fluid'],harm:{},
+ res:{hx_med:'家屬拿出藥袋：Metformin 1000mg bid、Valsartan、還有鄰居給的止痛藥（NSAID）。',
+  hx_course:'拉肚子三天，幾乎沒喝水，藥照吃沒停。',hx_etoh:'不喝酒。',hx_vision:'沒有視力或聽力變化。',
+  hx_psy:'情緒平穩，否認自傷。',hx_travel:'無旅遊史，無特殊接觸。',
+  ex_resp:'深而快的代償性呼吸（Kussmaul）。',ex_perf:'四肢冰冷、花斑，微血管回填 >4 秒。',
+  ex_cardio:'心跳快但規則，兩肺乾淨。',ex_abd:'腹軟，腸音亢進，無壓痛。',
+  ex_skin:'皮膚乾燥、脫水皺摺明顯，全身無傷口。',ex_neuro:'嗜睡但可喚醒，瞳孔等大。',
+  lb_gas:'pH 7.08、pCO₂ 18、HCO₃ 5。嚴重代謝性酸中毒併呼吸代償。',
+  lb_lyte:'Na 139、K 5.8、Cl 102、HCO₃ 5 → AG 32。',lb_lac:'Lactate 17.8 mmol/L。',
+  lb_renal:'BUN 78、Creatinine 5.1（三個月前是 1.0）。',lb_glu:'血糖 104。',lb_bhb:'BHB 0.4，無酮體。',
+  lb_osm:'滲透壓 318，計算後 gap 約 6。',lb_etoh:'Ethanol 未檢出。',lb_sal:'水楊酸未檢出。',
+  lb_alb:'Albumin 3.1。',lb_cbc:'WBC 11,200、Hb 13.1、Plt 210K。',lb_cx:'已抽送，培養需數日。',
+  lb_ua:'尿量極少，無結晶，無菌尿。',lb_ecg:'竇性心搏過速，T 波高尖。',lb_cxr:'心肺未見浸潤。',
+  lb_ct:'腦部未見急性病灶。（花了 25 分鐘）',lb_us:'下腔靜脈塌陷，心收縮功能尚可。'},
+ win:'透析清除乳酸與 metformin，酸中毒逆轉。天亮時病人清醒，腎功能開始回升。',
+ lose:'酸血症持續惡化，血壓撐不住，凌晨五點心跳停止。'},
+
+{id:'meoh',name:'45 歲男性',dx:'甲醇中毒',
+ story:'被工地同事送來，說「一直說看東西霧霧的」，講話含糊。',
+ v0:{ph:7.14,hr:104,sbp:118,rr:28,spo2:98,gcs:14},
+ drift:{ph:-0.006,hr:.3,sbp:-.25,rr:.1,spo2:-.01,gcs:-.035},
+ deadline:55,
+ reveal:{ex_neuro:'lay-pupil',ex_resp:'lay-breath'},
+ pins:{ex_neuro:[100,172,'瞳孔散大、視力僅辨手動'],hx_etoh:[190,212,'來路不明的私酒']},
+ useful:['hx_etoh','hx_vision','hx_psy','lb_gas','lb_lyte','lb_osm','lb_etoh','lb_lac','ex_neuro','lb_glu','lb_renal','ex_vital'],
+ key:['hx_vision','lb_osm','lb_etoh'],need:['fome','hd'],harm:{},
+ res:{hx_med:'沒有慢性病，沒吃藥。',
+  hx_etoh:'同事說他昨晚喝了來路不明的私酒，一群人分的。另外兩個今天也不舒服。',
+  hx_course:'昨晚喝完睡覺，今天下午開始頭痛想吐。',
+  hx_vision:'「像在下大雪一樣」，視野一片白霧，這是他最在意的症狀。',
+  hx_psy:'否認自傷，說只是喝酒。',hx_travel:'無。',ex_resp:'呼吸深快。',ex_perf:'末梢溫暖，回填 2 秒。',
+  ex_cardio:'心肺無異常。',ex_abd:'上腹輕壓痛。',ex_skin:'無傷口。',
+  ex_neuro:'瞳孔散大、對光反應遲鈍，視力僅能辨手動。',
+  lb_gas:'pH 7.14、pCO₂ 22、HCO₃ 7。',lb_lyte:'Na 141、K 4.0、Cl 100、HCO₃ 7 → AG 34。',
+  lb_lac:'Lactate 3.2（無法解釋這麼大的 AG）。',lb_renal:'BUN 16、Creatinine 1.1。',lb_glu:'血糖 96。',
+  lb_bhb:'BHB 0.6。',lb_osm:'實測滲透壓 352，計算值 295 → Osm gap 57。',
+  lb_etoh:'Ethanol 未檢出——gap 不是酒精造成的。',lb_sal:'水楊酸未檢出。',lb_alb:'Albumin 4.2。',
+  lb_cbc:'無明顯異常。',lb_cx:'已抽送。',lb_ua:'無草酸鈣結晶。',lb_ecg:'竇性心搏過速。',lb_cxr:'正常。',
+  lb_ct:'基底核尚未見低密度變化。（花了 25 分鐘）',lb_us:'無特殊發現。'},
+ win:'Fomepizole 阻斷代謝，透析清除甲醇與甲酸。視力在數日內部分恢復。',
+ lose:'甲酸持續累積，酸血症惡化併癲癇，視神經永久損傷，清晨死亡。'},
+
+{id:'edka',name:'58 歲男性',dx:'血糖正常型酮酸中毒（eDKA）',
+ story:'兩天前做完腹腔鏡膽囊切除，今天一直吐、喘，急診轉來。',
+ v0:{ph:7.21,hr:106,sbp:124,rr:26,spo2:98,gcs:15},
+ drift:{ph:-0.0035,hr:.25,sbp:-.2,rr:.1,spo2:-.01,gcs:-.012},
+ deadline:75,
+ reveal:{ex_resp:'lay-breath',ex_skin:'lay-dry'},
+ pins:{ex_resp:[126,136,'呼氣帶甜味'],ex_abd:[214,166,'腹腔鏡傷口乾淨']},
+ useful:['hx_med','hx_course','lb_gas','lb_lyte','lb_bhb','lb_glu','lb_lac','lb_renal','ex_abd','ex_resp','ex_vital'],
+ key:['hx_med','lb_bhb'],need:['ins','fluid'],harm:{},
+ res:{hx_med:'糖尿病患者，服用 Empagliflozin 10mg qd 與 Metformin 500mg qd，手術前後都沒停過。',
+  hx_course:'術後一直沒食慾，兩天幾乎沒進食，今天開始吐。',hx_etoh:'偶爾小酌，這週沒喝。',
+  hx_vision:'無。',hx_psy:'焦慮但清楚。',hx_travel:'無。',
+  ex_resp:'呼吸深快，呼氣有淡淡甜味。',ex_perf:'末梢稍涼，回填 3 秒。',ex_cardio:'心肺無異常。',
+  ex_abd:'傷口乾淨，腹部輕壓痛，無腹膜炎徵象。',ex_skin:'黏膜乾燥。',ex_neuro:'意識清楚。',
+  lb_gas:'pH 7.21、pCO₂ 26、HCO₃ 10。',lb_lyte:'Na 136、K 3.2、Cl 98、HCO₃ 10 → AG 28。',
+  lb_lac:'Lactate 2.1。',lb_renal:'BUN 28、Creatinine 1.4。',
+  lb_glu:'血糖 176。看起來一點都不像 DKA。',lb_bhb:'BHB 6.8 mmol/L——大量酮體。',
+  lb_osm:'滲透壓 292，gap 約 4。',lb_etoh:'未檢出。',lb_sal:'未檢出。',lb_alb:'Albumin 3.6。',
+  lb_cbc:'WBC 12,800，其餘正常。',lb_cx:'已抽送。',lb_ua:'尿酮強陽性，尿糖陽性。',
+  lb_ecg:'T 波平坦，U 波出現（低血鉀）。',lb_cxr:'正常。',lb_ct:'未見異常。（花了 25 分鐘）',
+  lb_us:'膽囊已切除，無積液。'},
+ win:'停 SGLT2i，胰島素配 dextrose 併行，同時補鉀。酮體清除，早上病人已能坐起來喝水。',
+ lose:'酸中毒持續，低血鉀誘發心律不整，清晨急救無效。'},
+
+{id:'sepsis',name:'70 歲男性',dx:'敗血性休克（壞死性軟組織感染）',
+ story:'發燒、意識混亂被兒子送來。兒子說「他這兩天一直說腿痛」。',
+ v0:{ph:7.24,hr:124,sbp:82,rr:28,spo2:93,gcs:13},
+ drift:{ph:-0.005,hr:.35,sbp:-.5,rr:.14,spo2:-.05,gcs:-.03},
+ deadline:45,inevitable:true,
+ reveal:{ex_skin:'lay-lesion',ex_perf:'lay-mottle'},
+ pins:{ex_skin:[290,200,'暗紫瘀斑、水皰、捻髮音'],ex_perf:[248,128,'花斑延伸至膝']},
+ useful:['ex_skin','lb_lac','lb_cx','lb_cbc','ex_perf','lb_gas','hx_course','ex_vital','lb_lyte','lb_renal','lb_glu','ex_cardio'],
+ key:['ex_skin','lb_lac','lb_cx'],need:['fluid','abx','source'],harm:{},
+ res:{hx_med:'高血壓、糖尿病，服用 Amlodipine、Metformin。',
+  hx_course:'兩天前右小腿開始痛，越來越痛，今天發燒到 39 度。',hx_etoh:'不喝酒。',hx_vision:'無。',
+  hx_psy:'意識混亂，無法配合。',hx_travel:'無旅遊史。三天前赤腳踩到東西。',
+  ex_resp:'淺快呼吸。',ex_perf:'四肢冰冷、花斑延伸至膝蓋，回填 >5 秒。',
+  ex_cardio:'心跳快而弱，肺基底些微囉音。',ex_abd:'腹軟。',
+  ex_skin:'掀開被子翻身後：右小腿大片暗紫色瘀斑、張力性水皰，皮下可摸到捻髮音。疼痛程度遠超過外觀。',
+  ex_neuro:'意識混亂，無局部神經學缺損。',
+  lb_gas:'pH 7.24、pCO₂ 28、HCO₃ 12。',lb_lyte:'Na 132、K 4.8、Cl 96、HCO₃ 12 → AG 24。',
+  lb_lac:'Lactate 9.4 mmol/L。',lb_renal:'BUN 52、Creatinine 2.8。',lb_glu:'血糖 288。',
+  lb_bhb:'BHB 1.1。',lb_osm:'滲透壓 305，gap 約 5。',lb_etoh:'未檢出。',lb_sal:'未檢出。',
+  lb_alb:'Albumin 2.2。',lb_cbc:'WBC 24,600 併左移、Plt 78K。',lb_cx:'已抽送兩套。',
+  lb_ua:'無菌尿。',lb_ecg:'心房顫動併快速心室反應。',lb_cxr:'兩側基底些微浸潤。',
+  lb_ct:'腦部未見急性病灶。（花了 25 分鐘）',lb_us:'下腔塌陷，心收縮功能過動。'},
+ win:'',lose:'即使輸液、抗生素、外科都到位，病人仍在清晨因多重器官衰竭死亡。'},
+
+{id:'salicylate',name:'22 歲女性',dx:'水楊酸中毒',
+ story:'室友發現她在房間裡喘、一直說耳朵嗡嗡叫，送來急診。',
+ v0:{ph:7.44,hr:118,sbp:110,rr:34,spo2:98,gcs:14},
+ drift:{ph:-0.005,hr:.3,sbp:-.3,rr:.05,spo2:-.02,gcs:-.03},
+ deadline:60,
+ reveal:{ex_skin:'lay-sweat',ex_resp:'lay-breath',hx_vision:'lay-sweat'},
+ pins:{hx_vision:[104,186,'持續耳鳴、聽力下降'],ex_resp:[126,136,'明顯過度換氣']},
+ useful:['hx_psy','hx_med','hx_vision','lb_gas','lb_lyte','lb_sal','lb_glu','lb_lac','ex_resp','ex_vital','lb_renal'],
+ key:['hx_psy','hx_vision','lb_sal'],need:['bicarb','hd'],
+ harm:{intub:'插管後鎮靜使代償性過度換氣中斷，血中 pH 驟降，水楊酸大量進入中樞，病人迅速惡化。這是水楊酸中毒最經典也最致命的醫源性錯誤。'},
+ res:{hx_med:'室友說她最近頭痛，常吃止痛藥。床頭有空的阿斯匹靈瓶。',hx_etoh:'沒喝酒。',
+  hx_course:'今天下午開始喘、耳鳴、噁心。',
+  hx_vision:'持續耳鳴、聽力變差——水楊酸的典型徵象。',
+  hx_psy:'最近分手、情緒低落，室友說她昨天說過「不想活了」。',hx_travel:'無。',
+  ex_resp:'明顯過度換氣，深而快。',ex_perf:'末梢溫暖。',ex_cardio:'心跳快，肺乾淨。',
+  ex_abd:'上腹壓痛。',ex_skin:'流汗多，體溫 38.1。',ex_neuro:'躁動、注意力不集中，無局部缺損。',
+  lb_gas:'pH 7.44、pCO₂ 18、HCO₃ 12。呼吸性鹼中毒與代謝性酸中毒同時存在。',
+  lb_lyte:'Na 140、K 3.4、Cl 104、HCO₃ 12 → AG 24。',lb_lac:'Lactate 3.0。',
+  lb_renal:'BUN 14、Creatinine 0.9。',lb_glu:'血糖 78。',lb_bhb:'BHB 0.9。',
+  lb_osm:'滲透壓 296，gap 約 3。',lb_etoh:'未檢出。',
+  lb_sal:'水楊酸濃度 78 mg/dL，且仍在上升。',lb_alb:'Albumin 4.0。',lb_cbc:'無明顯異常。',
+  lb_cx:'已抽送。',lb_ua:'尿 pH 5.5。',lb_ecg:'竇性心搏過速。',lb_cxr:'正常。',
+  lb_ct:'未見異常。（花了 25 分鐘）',lb_us:'無特殊發現。'},
+ win:'鹼化尿液加上及時透析，濃度快速下降。隔天轉精神科會診，人清醒了。',
+ lose:'濃度持續上升，出現癲癇與肺水腫，清晨搶救無效。'},
+];
+
+const TOTAL=90;let S=null;
+const $=id=>document.getElementById(id);
+const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.round(m)%60).padStart(2,'0');
+function show(id){['intro','game','decision','debrief'].forEach(s=>$(s).classList.toggle('hide',s!==id));window.scrollTo(0,0);}
+
+function beatPoints(x0,w,base,amp){
+  const p=[[0,0],[.12,0],[.16,.10],[.22,0],[.30,0],[.33,-.16],[.37,.95],[.41,-.30],[.45,0],
+           [.62,0],[.70,.26],[.80,0],[1,0]];
+  return p.map(([fx,fy])=>`${(x0+fx*w).toFixed(1)},${(base-fy*amp).toFixed(1)}`).join(' ');
+}
+function buildEcg(){
+  const W=240,beats=5,bw=W/beats;let s='';
+  for(let i=0;i<beats;i++)s+=beatPoints(i*bw,bw,33,21)+' ';
+  $('ecg1').setAttribute('points',s.trim());$('ecg2').setAttribute('points',s.trim());
+}
+let ecgRAF=null,ecgX=0,lastTs=0;
+function animateEcg(){
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  cancelAnimationFrame(ecgRAF);lastTs=0;
+  const step=ts=>{if(!lastTs)lastTs=ts;const dt=(ts-lastTs)/1000;lastTs=ts;
+    const hr=S?vitalsNow().HR:80;
+    ecgX-=(240/5)*(hr/60)*dt;if(ecgX<=-240)ecgX+=240;
+    $('ecgScroll').setAttribute('transform',`translate(${ecgX.toFixed(1)},0)`);
+    ecgRAF=requestAnimationFrame(step);};
+  ecgRAF=requestAnimationFrame(step);
+}
+function vitalsNow(){
+  const{v0,drift}=S.c,t=S.t;
+  return{pH:v0.ph+drift.ph*t,HR:Math.round(v0.hr+drift.hr*t),
+    SBP:Math.round(v0.sbp+drift.sbp*t),RR:Math.round(v0.rr+drift.rr*t),
+    SpO2:Math.max(70,Math.round(v0.spo2+drift.spo2*t)),
+    GCS:Math.max(3,Math.round(v0.gcs+drift.gcs*t))};
+}
+function mix(a,b,k){const h=c=>[1,3,5].map(i=>parseInt(c.substr(i,2),16));
+  const A=h(a),B=h(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*k).toString(16).padStart(2,'0')).join('');}
+function renderPatient(){
+  const v=vitalsNow();
+  const pale=Math.min(1,Math.max(0,(105-v.SBP)/45));
+  const skin=mix('#E0AE83','#C6B3A6',pale);
+  document.querySelectorAll('.skin').forEach(el=>el.setAttribute('fill',skin));
+  const cy=Math.min(1,Math.max(0,(95-v.SpO2)/18));
+  $('mouth').setAttribute('fill',mix('#8E4B4A','#59689E',cy));
+  const shut=v.GCS<12;
+  $('eyesOpen').setAttribute('opacity',shut?0:1);
+  $('eyesShut').setAttribute('opacity',shut?1:0);
+  const dur=(60/Math.max(8,v.RR)).toFixed(2)+'s';
+  $('chest').style.animation=`breathe ${dur} ease-in-out infinite`;
+  $('mouthG').style.animation=`mouthb ${dur} ease-in-out infinite`;
+  $('lay-breath').style.animation=`puff ${dur} ease-out infinite`;
+  const rows=[['pH',v.pH.toFixed(2),v.pH<7.1?'bad':v.pH<7.25?'warn':''],
+    ['HR',v.HR,v.HR>130?'bad':v.HR>110?'warn':''],
+    ['SBP',v.SBP,v.SBP<80?'bad':v.SBP<95?'warn':''],
+    ['RR',v.RR,v.RR>34?'bad':v.RR>26?'warn':''],
+    ['SpO₂',v.SpO2+'%',v.SpO2<92?'bad':v.SpO2<95?'warn':''],
+    ['GCS',v.GCS,v.GCS<10?'bad':v.GCS<14?'warn':'']];
+  $('nums').innerHTML=rows.map(r=>`<div class="v ${r[2]}"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+}
+function applyReveal(id){
+  const c=S.c;
+  if(id==='ex_skin'){const b=$('blanket'),f=$('blanketfold');
+    [b,f].forEach(e=>{e.style.transition='transform .55s ease, opacity .55s';
+      e.style.transform='translateX(52px)';e.style.opacity='.3';});}
+  if(c.reveal&&c.reveal[id]){const el=$(c.reveal[id]);
+    if(el){el.style.transition='opacity .55s';el.setAttribute('opacity','1');}}
+  if(c.id==='meoh'&&id==='ex_neuro'){$('pupA').setAttribute('r','4.6');$('pupB').setAttribute('r','4.6');}
+  if(c.pins&&c.pins[id]){const[x,y,txt]=c.pins[id];S.pins.push({x,y,txt});renderPins();}
+}
+function renderPins(){
+  $('pins').innerHTML=S.pins.map(p=>`<g>
+      <circle cx="${p.x}" cy="${p.y}" r="10" fill="var(--sodium)" opacity=".18"/>
+      <circle cx="${p.x}" cy="${p.y}" r="5" fill="var(--sodium)"/>
+      <circle cx="${p.x}" cy="${p.y}" r="2" fill="var(--ink)"/></g>`).join('');
+  $('findings').innerHTML=S.pins.length
+    ?S.pins.map(p=>`<div><i></i><span>${p.txt}</span></div>`).join('')
+    :'<span class="note">身體上還沒有任何發現。理學檢查會把找到的東西標在圖上。</span>';
+}
+function renderClock(){
+  $('clock').textContent=fmt(S.t);
+  $('left').textContent=Math.max(0,TOTAL-S.t);
+  $('queue').textContent=11+Math.floor(S.t/7);
+  $('bar').querySelector('i').style.width=Math.min(100,S.t/TOTAL*100)+'%';
+  $('bar').classList.toggle('crit',S.t>S.c.deadline);
+}
+function renderTabs(){
+  $('tabs').innerHTML=CATS.map(c=>`<button role="tab" aria-selected="${c===S.tab}" data-cat="${c}">${c}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.cat;renderTabs();renderActs();});
+}
+function renderActs(){
+  $('acts').innerHTML=ACTIONS.filter(a=>a.c===S.tab).map(a=>{
+    const used=S.done.includes(a.id);
+    return`<button class="act" data-id="${a.id}" ${used?'disabled':''}>
+      <span>${a.label}</span><em>${used?'已做':'+'+a.t+' 分'}</em></button>`;}).join('');
+  $('acts').querySelectorAll('button').forEach(b=>b.onclick=()=>doAction(b.dataset.id));
+}
+function renderLog(){
+  $('log').innerHTML=S.log.length
+    ?S.log.slice().reverse().map(e=>`<div class="entry"><div class="ts">${fmt(e.t)}</div>
+      <div class="body"><b>${e.label}</b>${e.text}</div></div>`).join('')
+    :'<p class="empty">還沒有任何資訊。病人只給了你主訴和監視器上的數字。</p>';
+}
+function doAction(id){
+  if(S.over)return;
+  const a=ACTIONS.find(x=>x.id===id);
+  S.t+=a.t;S.done.push(id);
+  const text=(id==='ex_vital')
+    ?(()=>{const v=vitalsNow();return`pH ${v.pH.toFixed(2)}、HR ${v.HR}、SBP ${v.SBP}、RR ${v.RR}、SpO₂ ${v.SpO2}%、GCS ${v.GCS}。`;})()
+    :(S.c.res[id]||'沒有特別發現。');
+  S.log.push({t:S.t,label:a.label,text});
+  applyReveal(id);renderClock();renderPatient();renderActs();renderLog();
+  if(S.t>=TOTAL){S.over=true;openDecision(true);}
+}
+function resetScene(){
+  ['lay-lesion','lay-mottle','lay-sweat','lay-dry','lay-breath'].forEach(id=>$(id).setAttribute('opacity','0'));
+  ['blanket','blanketfold'].forEach(id=>{$(id).style.transform='';$(id).style.opacity='';});
+  $('pupA').setAttribute('r','2.6');$('pupB').setAttribute('r','2.6');
+  $('pins').innerHTML='';
+}
+function newGame(){
+  const c=CASES[Math.floor(Math.random()*CASES.length)];
+  S={c,t:0,done:[],log:[],tab:'問診',over:false,pins:[]};
+  resetScene();
+  $('ptname').textContent=c.name;$('ptstory').textContent=c.story;
+  renderTabs();renderActs();renderLog();renderClock();renderPatient();renderPins();
+  buildEcg();animateEcg();show('game');
+}
+function openDecision(forced){
+  const opts=CASES.map(c=>c.dx).concat(['尿毒性酸中毒','酒精性酮酸中毒','我不確定']);
+  opts.sort(()=>Math.random()-0.5);
+  $('dx').innerHTML=opts.map(o=>`<option>${o}</option>`).join('');
+  $('txlist').innerHTML=TX.map(t=>`<label class="chk"><input type="checkbox" value="${t.id}"><span>${t.label}</span></label>`).join('');
+  $('dectime').textContent=forced?'九十分鐘到了。不管你準備好沒有，現在必須決定。'
+    :`已耗時 ${S.t} 分鐘，剩下 ${TOTAL-S.t} 分鐘。`;
+  $('back').style.display=forced?'none':'';show('decision');
+}
+function commit(){
+  const dx=$('dx').value;
+  const picked=[...$('txlist').querySelectorAll('input:checked')].map(i=>i.value);
+  const c=S.c;
+  const dxRight=dx===c.dx,gotAll=c.need.every(n=>picked.includes(n)),inTime=S.t<=c.deadline;
+  const harmed=picked.filter(p=>c.harm[p]);
+  const missedKeys=c.key.filter(k=>!S.done.includes(k));
+  const lowYield=S.done.filter(d=>!c.useful.includes(d));
+  const wasted=lowYield.reduce((s,d)=>s+ACTIONS.find(a=>a.id===d).t,0);
+  const processOK=dxRight&&gotAll&&inTime&&!harmed.length;
+  const survived=processOK&&!c.inevitable;
+  let h=`<div class="verdict ${survived?'good':'bad'}">
+    <h3>${survived?'病人撐過這個晚上':'病人沒有撐過去'}</h3>
+    <p>${survived?c.win:(harmed.length?c.harm[harmed[0]]:c.lose)}</p>
+    <p class="note">正確診斷：${c.dx}</p></div>`;
+  if(c.inevitable&&processOK){
+    h+=`<div class="card"><h2>這一題沒有好結局</h2>
+      <p><strong>你的處置是正確的。</strong>你掀開被子翻了身，抓到 lactate，培養後給了抗生素，也叫了外科。這個病人在你做對每一步的情況下還是死了。</p>
+      <p>壞死性軟組織感染併敗血性休克的死亡率本來就很高。臨床上最容易傷到年輕醫師的，就是把壞結果自動當成自己犯錯。<strong>結果和過程是兩件事</strong>，這一關存在的唯一理由就是讓你先在遊戲裡碰一次。</p></div>`;}
+  h+='<div class="card"><h2>推理過程</h2>';
+  h+=`<p>${dxRight?'✅':'❌'} 診斷${dxRight?'正確':`錯誤（你選了「${dx}」）`}</p>`;
+  h+=missedKeys.length
+    ?`<p>❌ 漏掉關鍵資訊：${missedKeys.map(k=>ACTIONS.find(a=>a.id===k).label).join('、')}</p>
+      <p class="note">這幾項是這個病人身上唯一能把診斷釘死的東西。沒有它們，你的判斷是猜的。</p>`
+    :'<p>✅ 關鍵資訊都拿到了</p>';
+  const missTx=c.need.filter(n=>!picked.includes(n));
+  h+=missTx.length?`<p>❌ 漏掉必要處置：${missTx.map(m=>TX.find(t=>t.id===m).label).join('、')}</p>`
+    :'<p>✅ 必要處置都下了</p>';
+  h+=inTime?`<p>✅ 在 ${c.deadline} 分鐘的時間窗內完成</p>`
+    :`<p>❌ 超過時間窗（${S.t} 分 / 應在 ${c.deadline} 分內）</p>`;
+  if(harmed.length)h+=`<p>❌ 有害處置：${TX.find(t=>t.id===harmed[0]).label}</p>`;
+  h+='</div><div class="card"><h2>時間都花到哪去了</h2>';
+  h+=wasted===0?'<p>✅ 你沒有點任何低產出的項目。這在真實急診是很難得的紀律。</p>'
+    :`<p>你在不會改變這個病人處置的項目上花了 <strong>${wasted} 分鐘</strong>：</p>
+      <p class="note">${lowYield.map(d=>ACTIONS.find(a=>a.id===d).label).join('、')}</p>
+      <p>這些檢查不是「錯」，是<strong>在這個病人身上不划算</strong>。急診的核心技能不是想得到所有可能，是知道哪一項會改變你接下來要做的事。</p>`;
+  h+=`<p class="note">總耗時 ${S.t} 分鐘，共執行 ${S.done.length} 個動作。</p></div>`;
+  $('debriefBody').innerHTML=h;show('debrief');
+}
+$('start').onclick=newGame;$('again').onclick=newGame;
+$('decide').onclick=()=>openDecision(false);
+$('back').onclick=()=>show('game');
+$('commit').onclick=commit;
+</script>
+</body>
+</html>
