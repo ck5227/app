@@ -564,14 +564,18 @@ const CASES=[
   hx_vision:'無。',hx_psy:'焦慮但清楚。',hx_travel:'無。',
   ex_resp:'呼吸深快，呼氣有淡淡甜味。',ex_perf:'末梢稍涼，回填 3 秒。',ex_cardio:'心肺無異常。',
   ex_abd:'傷口乾淨，腹部輕壓痛，無腹膜炎徵象。',ex_skin:'黏膜乾燥。',ex_neuro:'意識清楚。',
-  lb_gas:'pH 7.21、pCO₂ 26、HCO₃ 10。',lb_lyte:'Na 136、K 3.2、Cl 98、HCO₃ 10 → AG 28。',
+  lb_gas:'pH 7.21、pCO₂ 26、HCO₃ 10。',
+  lb_lyte:'Na 136、K 3.2、Cl 98、HCO₃ 10 → AG 28。K 3.2 低於 3.5，2024 共識要求先補鉀再給胰島素。',
   lb_lac:'Lactate 2.1。',lb_renal:'BUN 28、Creatinine 1.4。',
-  lb_glu:'血糖 176。看起來一點都不像 DKA。',lb_bhb:'BHB 6.8 mmol/L——大量酮體。',
+  lb_glu:'血糖 176。看起來一點都不像 DKA。',
+  lb_bhb:'BHB 6.8 mmol/L——大量酮體。ADA/EASD 2024 的診斷不看血糖高低，'
+        +'已知糖尿病＋BHB ≥3.0＋pH <7.3 三項就成立。',
   lb_osm:'滲透壓 292，gap 約 4。',lb_etoh:'未檢出。',lb_sal:'未檢出。',lb_alb:'Albumin 3.6。',
   lb_cbc:'WBC 12,800，其餘正常。',lb_cx:'已抽送。',lb_ua:'尿酮強陽性，尿糖陽性。',
   lb_ecg:'T 波平坦，U 波出現（低血鉀）。',lb_cxr:'正常。',lb_ct:'未見異常。（花了 25 分鐘）',
   lb_us:'膽囊已切除，無積液。'},
- win:'停 SGLT2i，胰島素配 dextrose 併行，同時補鉀。酮體清除，早上病人已能坐起來喝水。',
+ win:'停 SGLT2i。K 3.2 低於 3.5，依 ADA/EASD 2024 共識先以 10 mmol/hr 補鉀、暫緩胰島素，'
+   +'待 K 過 3.5 才開胰島素並配 dextrose 併行。BHB 由 6.8 降到 3.0 以下，早上病人已能坐起來喝水。',
  lose:'酸中毒持續，低血鉀誘發心律不整，清晨急救無效。'},
 
 {id:'sepsis',name:'70 歲男性',dx:'敗血性休克（壞死性軟組織感染）',
@@ -596,7 +600,8 @@ const CASES=[
   lb_alb:'Albumin 2.2。',lb_cbc:'WBC 24,600 併左移、Plt 78K。',lb_cx:'已抽送兩套。',
   lb_ua:'無菌尿。',lb_ecg:'心房顫動併快速心室反應。',lb_cxr:'兩側基底些微浸潤。',
   lb_ct:'腦部未見急性病灶。（花了 25 分鐘）',lb_us:'下腔塌陷，心收縮功能過動。'},
- win:'',lose:'即使輸液、抗生素、外科都到位，病人仍在清晨因多重器官衰竭死亡。'},
+ win:'',lose:'即使依 SSC 2026 在 3 小時內給足晶體液、1 小時內給抗生素、'
+   +'MAP 以 70 歲的 60–65 mmHg 為目標、外科也進了刀房，病人仍在清晨因多重器官衰竭死亡。'},
 
 {id:'salicylate',name:'22 歲女性',dx:'水楊酸中毒',
  story:'室友發現她在房間裡喘、一直說耳朵嗡嗡叫，送來急診。',
@@ -618,12 +623,41 @@ const CASES=[
   lb_lyte:'Na 140、K 3.4、Cl 104、HCO₃ 12 → AG 24。',lb_lac:'Lactate 3.0。',
   lb_renal:'BUN 14、Creatinine 0.9。',lb_glu:'血糖 78。',lb_bhb:'BHB 0.9。',
   lb_osm:'滲透壓 296，gap 約 3。',lb_etoh:'未檢出。',
-  lb_sal:'水楊酸濃度 78 mg/dL，且仍在上升。',lb_alb:'Albumin 4.0。',lb_cbc:'無明顯異常。',
+  lb_sal:'水楊酸濃度 78 mg/dL，且仍在上升。濃度本身未過 EXTRIP 的 90／100 mg/dL，'
+        +'但她有意識改變（躁動、注意力不集中），這一條本身就是體外清除的強建議（1D）。',lb_alb:'Albumin 4.0。',lb_cbc:'無明顯異常。',
   lb_cx:'已抽送。',lb_ua:'尿 pH 5.5。',lb_ecg:'竇性心搏過速。',lb_cxr:'正常。',
   lb_ct:'未見異常。（花了 25 分鐘）',lb_us:'無特殊發現。'},
  win:'鹼化尿液加上及時透析，濃度快速下降。隔天轉精神科會診，人清醒了。',
  lose:'濃度持續上升，出現癲癇與肺水腫，清晨搶救無效。'},
 ];
+
+// 文獻依據（最後查證 2026-09-20）。本遊戲情境依下列原始學會聲明撰寫，
+// 非任何訂閱資料庫之內容。臨床使用請以最新原文與院內規範為準。
+const EVIDENCE_REVIEWED='2026-09-20';
+const REFS=[
+ ['Surviving Sepsis Campaign 2026','Crit Care Med / Intensive Care Med, 2026',
+  '取代 2021 版。≥65 歲初始 MAP 目標可設 60–65 mmHg；敗血性休克維持 3 小時內至少 30 mL/kg 晶體液但強調個別化；肥胖者以理想／校正體重計算；抗生素理想上 1 小時內。'],
+ ['ADA/EASD 高血糖急症共識','Diabetes Care / Diabetologia, 2024',
+  '定量 BHB 納入診斷（≥3.0 mmol/L）與緩解（<3.0）判定；陰離子隙不再是第一線診斷標準；起始胰島素的鉀門檻由 3.3 上修為 3.5 mmol/L。'],
+ ['EXTRIP — metformin','Crit Care Med, 2015',
+  'lactate >20 或 pH ≤7.0 建議體外清除（1D）；>15 或 ≤7.1 建議考慮（2D）。停止門檻 lactate <3 且 pH >7.35。'],
+ ['EXTRIP — 甲醇','Crit Care Med, 2015',
+  '昏迷、癲癇、新發視覺缺損、pH ≤7.15、AG >24 均為指徵。透析期間 ADH 阻斷劑與 folate 續用。'],
+ ['EXTRIP — 乙二醇','Critical Care, 2023',
+  'EXTRIP 系列最新改版。併用 fomepizole 時 osm gap >50、glycolate >12 mmol/L 或 AG >27。'],
+ ['EXTRIP — 水楊酸','Ann Emerg Med, 2015',
+  '>100 mg/dL、腎功能受損時 >90、意識改變、新發需氧氣之低血氧均為強建議（1D）；pH ≤7.20 為 2D。'],
+ ['ACMT 水楊酸處置要點','American College of Medical Toxicology, 2013',
+  '插管與機械通氣可使水楊酸毒性急遽惡化並增加死亡率；若以水楊酸毒性為插管適應症，透析應優先於或至少與插管同時進行。'],
+ ['KDIGO AKI；STARRT-AKI / AKIKI','Kidney Int Suppl 2012；NEJM',
+  '2012 版仍為現行正式版本。KDIGO 2026 AKI/AKD 指引草案已公開徵詢但截至查證日尚未正式發表。'],
+];
+const REFHTML='<div class="card"><h2>文獻依據</h2>'
+ +`<p class="note">最後查證 ${EVIDENCE_REVIEWED}。本遊戲情境依下列原始學會聲明撰寫，`
+ +'非任何訂閱資料庫之內容。教學用途，不取代臨床判斷。</p>'
+ +REFS.map(r=>`<p style="margin-bottom:10px"><strong>${r[0]}</strong>　`
+   +`<span class="note">${r[1]}</span><br><span class="note">${r[2]}</span></p>`).join('')
+ +'</div>';
 
 const TOTAL=90;let S=null;
 const $=id=>document.getElementById(id);
@@ -796,6 +830,7 @@ function commit(){
       <p class="note">${lowYield.map(d=>ACTIONS.find(a=>a.id===d).label).join('、')}</p>
       <p>這些檢查不是「錯」，是<strong>在這個病人身上不划算</strong>。急診的核心技能不是想得到所有可能，是知道哪一項會改變你接下來要做的事。</p>`;
   h+=`<p class="note">總耗時 ${S.t} 分鐘，共執行 ${S.done.length} 個動作。</p></div>`;
+  h+=REFHTML;
   $('debriefBody').innerHTML=h;show('debrief');
 }
 $('start').onclick=newGame;$('again').onclick=newGame;

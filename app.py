@@ -10,6 +10,94 @@ import streamlit as st
 st.set_page_config(page_title="AcidoScope", page_icon="🧪", layout="wide")
 
 # ------------------------------------------------------------------
+# 0. 文獻依據（建議文字以 [代號] 對應此表）
+#    最後查證日期請在每次核對指引後更新。
+# ------------------------------------------------------------------
+EVIDENCE_REVIEWED = "2026-09-20"
+
+REFS = {
+    'SSC2026': {
+        'title': "Surviving Sepsis Campaign: International Guidelines for Management of "
+                 "Sepsis and Septic Shock 2026",
+        'source': "Crit Care Med / Intensive Care Med", 'year': 2026,
+        'note': "取代 2021 版，共 129 條、其中 46 條為全新。與本程式相關的變動："
+                "≥65 歲初始 MAP 目標可設 60–65 mmHg（條件式建議）；"
+                "維持敗血性休克 3 小時內至少 30 mL/kg 晶體液但強調個別化與頻繁再評估；"
+                "肥胖者以理想／校正體重計算；抗生素理想上 1 小時內。",
+        'url': "https://doi.org/10.1007/s00134-026-08361-1",
+    },
+    'ADA2024': {
+        'title': "Hyperglycemic Crises in Adults With Diabetes: A Consensus Report "
+                 "(ADA / EASD / AACE / DTS / JBDS)",
+        'source': "Diabetes Care / Diabetologia", 'year': 2024,
+        'note': "重要變動：定量 BHB 納入診斷（≥3.0 mmol/L）與緩解判定（<3.0 mmol/L）；"
+                "**陰離子隙不再是第一線診斷標準**；"
+                "起始胰島素的鉀門檻由 3.3 上修為 3.5 mmol/L；"
+                "血糖 <250 mg/dL 即加 dextrose。SGLT2i 相關 eDKA 由「已知糖尿病」"
+                "這一條納入，不受血糖正常影響。",
+        'url': "https://pubmed.ncbi.nlm.nih.gov/38907161/",
+    },
+    'E-MET': {
+        'title': "Extracorporeal treatment for metformin poisoning: "
+                 "recommendations from the EXTRIP workgroup",
+        'source': "Critical Care Medicine", 'year': 2015,
+        'note': "建議體外清除：lactate >20 mmol/L 或 pH ≤7.0（1D）。"
+                "建議考慮：lactate >15 或 pH ≤7.1（2D）。"
+                "下修門檻之共病：休克、腎功能受損（1D）、肝衰竭、意識下降（2D）。"
+                "首選含碳酸氫鹽透析液之間歇性 HD（1D）；"
+                "停止門檻 lactate <3 mmol/L 且 pH >7.35（1D）。",
+        'url': "https://www.extrip-workgroup.org/metformin",
+    },
+    'E-MeOH': {
+        'title': "Extracorporeal treatment for methanol poisoning: "
+                 "recommendations from the EXTRIP workgroup",
+        'source': "Critical Care Medicine", 'year': 2015,
+        'note': "濃度門檻：併用 fomepizole >700 mg/L、併用 ethanol >600 mg/L、"
+                "無 ADH 阻斷劑 >500 mg/L。臨床門檻：昏迷、癲癇、新發視覺缺損、"
+                "pH ≤7.15、AG >24 mmol/L、解毒與支持治療下酸中毒仍持續。"
+                "停止門檻 <200 mg/L 且臨床改善；透析期間續用 ADH 阻斷劑與 folate。",
+        'url': "https://www.extrip-workgroup.org/methanol",
+    },
+    'E-EG': {
+        'title': "Extracorporeal treatment for ethylene glycol poisoning: systematic "
+                 "review and recommendations from the EXTRIP workgroup",
+        'source': "Critical Care", 'year': 2023,
+        'note': "2023 改版，是 EXTRIP 系列中最新的一份。不以攝入劑量單獨決定；"
+                "併用 fomepizole 時濃度 >50 mmol/L 或 osm gap >50；"
+                "glycolate >12 mmol/L 或 AG >27 mmol/L；或昏迷、癲癇、AKI。",
+        'url': "https://pubmed.ncbi.nlm.nih.gov/36765419/",
+    },
+    'E-SAL': {
+        'title': "Extracorporeal Treatment for Salicylate Poisoning: Systematic Review "
+                 "and Recommendations From the EXTRIP Workgroup",
+        'source': "Annals of Emergency Medicine", 'year': 2015,
+        'note': "建議體外清除（1D）：>100 mg/dL；腎功能受損時 >90 mg/dL；"
+                "意識改變；新發需氧氣之低血氧；標準治療失敗。"
+                "建議考慮（2D）：>90 mg/dL；腎功能受損時 >80 mg/dL；pH ≤7.20。"
+                "首選間歇性 HD（1D）；停止門檻 <19 mg/dL 且臨床改善。",
+        'url': "https://pubmed.ncbi.nlm.nih.gov/25986310/",
+    },
+    'ACMT-SAL': {
+        'title': "Guidance Document: Management Priorities in Salicylate Toxicity",
+        'source': "American College of Medical Toxicology", 'year': 2013,
+        'note': "插管相關警告的原始出處：插管與機械通氣可使水楊酸毒性急遽惡化並增加死亡率，"
+                "除非以過度換氣與碳酸氫鈉維持正常或略偏鹼的 pH。"
+                "若以水楊酸毒性為插管適應症，透析應優先於或至少與插管同時進行。",
+        'url': "https://www.acmt.net/wp-content/uploads/2022/06/"
+               "PRS_130313_Management-Priorities-in-Salicylate-Toxicity.pdf",
+    },
+    'KDIGO': {
+        'title': "KDIGO Clinical Practice Guideline for Acute Kidney Injury；"
+                 "併 STARRT-AKI 與 AKIKI 之 RRT 啟動時機證據",
+        'source': "Kidney Int Suppl；NEJM", 'year': 2012,
+        'note': "2012 版仍為現行正式版本。KDIGO 2026 AKI/AKD 指引草案已於 2026 年 3 月"
+                "公開徵詢、5 月 11 日截止，截至本次查證日尚未正式發表，"
+                "屆時定義將擴及 AKD 並納入結構性生物標記，需重新核對。",
+        'url': "https://kdigo.org/guidelines/acute-kidney-injury/",
+    },
+}
+
+# ------------------------------------------------------------------
 # 1. 去識別化（先遮後解析）
 # ------------------------------------------------------------------
 def deidentify(text: str) -> str:
@@ -35,6 +123,8 @@ LAB_RULES = {
     'Ketone':   r'\b(?:BHB|Ketone|beta-?hydroxybutyrate)\s*[:=]?\s*(\d{1,2}(?:\.\d)?)',
     'Ethanol':  r'\b(?:EtOH|Ethanol)\s*[:=]?\s*(\d{1,3})',
     'Osm':      r'\b(?:Osm|Osmolality)\s*[:=]?\s*(\d{3})',
+    'Salicylate': r'\b(?:Salicylate|ASA|水楊酸)\s*(?:level|conc\w*)?\s*[:=]?\s*(\d{1,3}(?:\.\d)?)',
+    'K':        r'\bK\s*[:=]?\s*([1-9](?:\.\d)?)',
 }
 
 
@@ -78,11 +168,15 @@ def compute(labs: dict) -> dict:
         if hco3 < 24:
             out['delta_ratio'] = (eff_ag - 12) / (24 - hco3) if hco3 != 24 else None
 
-    if None not in (na, labs.get('Osm')):
-        calc = 2 * na + labs.get('Glucose', 90) / 18.0 + labs.get('BUN', 14) / 2.8
+    # 滲透壓間隙：Na、Glucose、BUN、實測 Osm 四項缺一不可。
+    # 舊版曾以 Glucose=90 / BUN=14 代入缺值，會在高血糖或尿毒病人身上
+    # 高估 osm gap 數十 mOsm，把 HHS／腎衰竭誤導向毒性酒精，方向最危險。
+    glu, bun, osm = labs.get('Glucose'), labs.get('BUN'), labs.get('Osm')
+    if None not in (na, glu, bun, osm):
+        calc = 2 * na + glu / 18.0 + bun / 2.8
         if labs.get('Ethanol') is not None:
             calc += labs['Ethanol'] / 3.7          # 未加此項會把酒精誤判為毒醇
-        out['osm_gap'] = labs['Osm'] - calc
+        out['osm_gap'] = osm - calc
     return out
 
 
@@ -156,11 +250,19 @@ def score_etiologies(labs, meds, calc, alcohol_hx, sepsis_suspect):
 def missing_tests(labs):
     miss = []
     if labs.get('Ketone') is None:
-        miss.append("血清 β-hydroxybutyrate — 未驗則無法排除 eDKA / AKA")
+        miss.append("血清 β-hydroxybutyrate — 未驗則無法排除 eDKA / AKA；"
+                    "ADA/EASD 2024 已將 BHB ≥3.0 mmol/L 納入 DKA 診斷標準")
     if labs.get('Osm') is None:
         miss.append("血清滲透壓（需與血液同時抽）— 未驗則無法評估毒醇")
     if labs.get('Ethanol') is None and labs.get('Osm') is not None:
         miss.append("血中 ethanol — 未扣除會把酒精誤判成甲醇/乙二醇")
+    # osm gap 需要 Na、Glucose、BUN、Osm 四項齊備，缺任一項就不計算
+    if labs.get('Osm') is not None:
+        lack = [n for n, k in (('血糖', 'Glucose'), ('BUN', 'BUN'), ('Na', 'Na'))
+                if labs.get(k) is None]
+        if lack:
+            miss.append(f"{'、'.join(lack)} — 缺這幾項就無法計算滲透壓間隙"
+                        "（本程式不以假設正常值代入）")
     if labs.get('Albumin') is None:
         miss.append("Albumin — 低白蛋白會低估 AG")
     if labs.get('Lactate') is None:
@@ -173,31 +275,56 @@ def missing_tests(labs):
 # ------------------------------------------------------------------
 def dialysis_assessment(labs, calc, top_names):
     ph, lac, cr = labs.get('pH'), labs.get('Lactate'), labs.get('Cr')
+    ag = calc['ag_corr'] if calc['ag_corr'] is not None else calc['ag']
+    og, sal = calc['osm_gap'], labs.get('Salicylate')
     urgent, consider = [], []
 
     if any('毒性酒精' in n for n in top_names):
-        if ph is not None and ph < 7.30:
-            urgent.append("疑毒醇中毒併酸血症（pH <7.30）：EXTRIP/ACMT 建議體外清除，且**解毒劑不可等透析**")
-        consider.append("其他透析指徵：視覺障礙、確診高濃度毒醇、腎損傷、解毒劑無法取得")
+        if ph is not None and ph <= 7.15:
+            urgent.append("pH ≤7.15：EXTRIP 甲醇建議體外清除（1D）。"
+                          "**解毒劑不可等透析**，fomepizole 先給 [E-MeOH]")
+        if ag is not None and ag > 24:
+            urgent.append(f"AG {ag:.0f} >24：EXTRIP 甲醇建議體外清除（1D）[E-MeOH]")
+        consider.append("EXTRIP 甲醇濃度門檻：有 fomepizole >700 mg/L、有 ethanol >600 mg/L、"
+                        "無 ADH 阻斷劑 >500 mg/L；另昏迷、癲癇、新發視覺缺損亦為指徵 [E-MeOH]")
+        consider.append("EXTRIP 乙二醇（2023 改版）：用 fomepizole 時濃度 >50 mmol/L 或 osm gap >50；"
+                        "glycolate >12 mmol/L 或 AG >27 mmol/L；或昏迷、癲癇、AKI [E-EG]")
+        consider.append("停止時機：甲醇 <200 mg/L 且臨床改善；透析期間 ADH 阻斷劑與 folate 需續用 [E-MeOH]")
 
     if any('MALA' in n for n in top_names):
         if (lac is not None and lac > 20) or (ph is not None and ph <= 7.00):
-            urgent.append("MALA 併 lactate >20 或 pH ≤7.00：EXTRIP 建議體外清除（強烈）")
-        elif (lac is not None and lac > 15) or (ph is not None and ph <= 7.10) or (cr is not None and cr >= 2.0):
-            consider.append("MALA 併 lactate >15 / pH ≤7.10 / 明顯 AKI：EXTRIP 建議考慮體外清除")
+            urgent.append("lactate >20 mmol/L 或 pH ≤7.00：EXTRIP 建議體外清除（1D）[E-MET]")
+        elif (lac is not None and lac > 15) or (ph is not None and ph <= 7.10):
+            consider.append("lactate >15 mmol/L 或 pH ≤7.10：EXTRIP 建議考慮體外清除（2D）[E-MET]")
+        if cr is not None and cr >= 2.0:
+            consider.append("腎功能受損為 EXTRIP 列出的共病之一（1D），會下修上述門檻；"
+                            "其餘為休克（1D）、肝衰竭（2D）、意識下降（2D）[E-MET]")
+        consider.append("首選間歇性血液透析（含碳酸氫鹽透析液，1D）；"
+                        "停止時機為 lactate <3 mmol/L 且 pH >7.35（1D）[E-MET]")
 
     if any('水楊酸' in n for n in top_names):
-        consider.append("水楊酸：意識改變、肺水腫、腎損傷或濃度持續上升 → 透析指徵")
+        if sal is not None and sal > 100:
+            urgent.append(f"水楊酸 {sal:.0f} mg/dL >100：EXTRIP 建議體外清除（1D）[E-SAL]")
+        elif sal is not None and sal > 90:
+            urgent.append(f"水楊酸 {sal:.0f} mg/dL >90：腎功能受損時建議（1D）、"
+                          "腎功能正常時為建議考慮（2D）[E-SAL]")
+        if ph is not None and ph <= 7.20:
+            consider.append("pH ≤7.20：EXTRIP 建議考慮體外清除（2D）[E-SAL]")
+        consider.append("意識改變、新發需氧氣之低血氧、標準治療失敗 → EXTRIP 建議體外清除（1D）；"
+                        "首選間歇性 HD，停止時機為濃度 <19 mg/dL 且臨床改善 [E-SAL]")
+        consider.append("**插管是水楊酸最典型的醫源性致命錯誤**：鎮靜癱瘓後代償性過度換氣中斷，"
+                        "pH 驟降使水楊酸大量進入中樞。若無法避免，插管前先給碳酸氫鈉、"
+                        "插管後比照插管前的分鐘換氣量，並同步啟動透析 [ACMT-SAL]")
 
     consider.append("一般 AKI：無危及生命指徵時，延後 RRT 不劣於早期啟動（STARRT-AKI / AKIKI）— "
-                    "依高鉀、容積過載、難治性酸血症、尿毒症狀決定，不以單一 pH 數值啟動")
+                    "依高鉀、容積過載、難治性酸血症、尿毒症狀決定，不以單一 pH 數值啟動 [KDIGO]")
     return urgent, consider
 
 
 # ------------------------------------------------------------------
 # 7. 處置建議
 # ------------------------------------------------------------------
-def orders_for(name, labs, weight):
+def orders_for(name, labs, weight, age=None):
     cr = labs.get('Cr')
     aki = cr is not None and cr >= 1.5
     give, avoid = [], []
@@ -210,6 +337,7 @@ def orders_for(name, labs, weight):
             "疑甲醇：folinic acid（或 folic acid）1 mg/kg，單次上限 50 mg，IV q4–6h",
             "疑乙二醇：thiamine 100 mg + pyridoxine 50–100 mg IV",
             "立即照會毒物科與腎臟科；送驗甲醇/乙二醇濃度與尿液鏡檢（草酸鈣結晶）",
+            "透析期間 ADH 阻斷劑與 folate 不可停，需續用至濃度降到停止門檻 [E-MeOH]",
         ]
         avoid.append("勿因等待濃度報告而延遲 fomepizole — 解毒劑優先於確診")
 
@@ -221,7 +349,9 @@ def orders_for(name, labs, weight):
             "同時覆蓋感染源：血液培養 ×2 後給經驗性抗生素（MALA 與敗血症常並存）",
         ]
         avoid += [
-            "勿一律套用固定低速輸液或一律 30 mL/kg bolus — 兩者皆非個別化",
+            "勿一律套用固定低速輸液。SSC 2026 對敗血性休克仍建議 3 小時內至少 30 mL/kg，"
+            "但強調需個別化並頻繁再評估，避免過量或不足；MALA 常併容積過載，"
+            "給的同時要盯灌流指標 [SSC2026]",
             "AKI 未穩定期避免非必要顯影劑",
             "勿因 bicarbonate 輸注而延後透析評估",
         ]
@@ -229,30 +359,49 @@ def orders_for(name, labs, weight):
     elif 'Type A' in name:
         fluid = f"約 {int(weight*30)} mL" if weight else "30 mL/kg"
         give += [
-            f"初始晶體輸液 {fluid}（平衡鹽液），之後以動態指標滴定",
-            "抗生素前完成血液培養 ×2；1 小時內給經驗性抗生素",
+            f"初始晶體輸液至少 {fluid}，於 3 小時內給完，之後以動態指標滴定；"
+            "肥胖者以理想或校正體重計算，不用實際體重 [SSC2026]",
+            "抗生素前完成血液培養 ×2；敗血性休克或已確立之敗血症，"
+            "立即給經驗性抗生素、理想上 1 小時內（強建議）[SSC2026]",
             "首劑抗生素不因 AKI 減量；後續劑量再依腎功能調整",
         ]
+        if age and age >= 65:
+            give.append(f"{int(age)} 歲：SSC 2026 新增條件式建議，"
+                        "≥65 歲初始 MAP 目標可設 60–65 mmHg，以減少升壓劑暴露 [SSC2026]")
+        else:
+            give.append("初始 MAP 目標 65 mmHg [SSC2026]")
         if aki:
             avoid.append("AKI 急性期 Cr 尚未穩定，Cockcroft-Gault 估算不可靠，勿據此減量首劑")
 
     elif '酮酸' in name:
         give += [
-            "送驗血清 BHB 並每 2–4 小時追蹤（以 BHB 而非血糖判斷是否收酮）",
+            "送驗血清 BHB 並每 2–4 小時追蹤。ADA/EASD 2024 已把定量 BHB 納入診斷與"
+            "療效判定，收酮以 BHB 為準而非血糖或 AG [ADA2024]",
+            "診斷門檻（三項齊備）：血糖 ≥200 mg/dL 或已知糖尿病、BHB ≥3.0 mmol/L"
+            "（或尿酮 ≥2+）、pH <7.3 或 HCO₃ <18。**AG 已不再列為第一線診斷標準** [ADA2024]",
             "Thiamine 100 mg IV 先於含糖輸液（酗酒者）",
             "AKA：D5 含鹽輸液即可逆轉，多不需胰島素",
-            "eDKA：胰島素輸注必須與 dextrose 併行，維持血糖 150–200 mg/dL；停 SGLT2i",
-            "補鉀：K <3.3 時先補鉀再給胰島素；監測磷與鎂",
+            "eDKA：胰島素輸注 0.1 U/kg/hr，血糖 <250 mg/dL 即加 D5–D10 併行，"
+            "撐到酮體清除為止；停 SGLT2i [ADA2024]",
+            "補鉀：**K <3.5 mmol/L 先以 10 mmol/hr 補鉀並暫緩胰島素**，"
+            "待 K >3.5 再開始（2024 共識由舊版 3.3 上修）；監測磷與鎂 [ADA2024]",
+            "緩解條件：BHB <3.0 mmol/L、pH >7.3、HCO₃ >15 mmol/L 且臨床穩定 [ADA2024]",
         ]
-        avoid.append("勿因血糖正常而排除酮酸中毒")
+        avoid.append("勿因血糖正常而排除酮酸中毒；SGLT2i 使用者的 eDKA 血糖可完全正常")
 
     elif '水楊酸' in name:
         give += [
-            "送驗水楊酸濃度並每 2 小時追蹤至下降",
-            "鹼化尿液（碳酸氫鈉輸注，目標尿 pH 7.5–8）並積極補鉀",
-            "照會毒物科",
+            "送驗水楊酸濃度並每 2 小時追蹤至確定下降（單次數值無法判斷，"
+            "腸衣錠與胃石可使吸收延遲數小時）",
+            "鹼化尿液（碳酸氫鈉輸注，目標尿 pH 7.5–8）並積極補鉀——"
+            "低血鉀會使腎小管重吸收水楊酸，鹼化就無效 [ACMT-SAL]",
+            "體外清除門檻：>100 mg/dL；腎功能受損時 >90 mg/dL；"
+            "意識改變或新發需氧氣之低血氧（1D）；pH ≤7.20（2D）[E-SAL]",
+            "照會毒物科與腎臟科",
         ]
-        avoid.append("避免插管；插管後過度換氣代償喪失可致急遽惡化")
+        avoid.append("**避免插管**。鎮靜癱瘓後代償性過度換氣中斷，pH 驟降使水楊酸"
+                     "大量進入中樞，是本病最典型的醫源性死因。若非插管不可：先給碳酸氫鈉、"
+                     "插管後比照插管前的分鐘換氣量，並同步（而非之後）啟動透析 [ACMT-SAL]")
 
     elif '尿毒' in name:
         give.append("照會腎臟科；依高鉀、容積過載、尿毒症狀決定 RRT 時機")
@@ -345,7 +494,7 @@ st.divider()
 st.subheader("④ 建議處置")
 
 for name in top_names:
-    give, avoid = orders_for(name, labs, weight)
+    give, avoid = orders_for(name, labs, weight, age)
     if not (give or avoid):
         continue
     with st.expander(f"針對「{name}」的處置", expanded=True):
@@ -370,5 +519,18 @@ R：{'；'.join(urgent) if urgent else '目前無立即體外清除之絕對指�
         height=200,
     )
 
-st.caption("依據：EXTRIP workgroup（metformin、甲醇、水楊酸）、ACMT 毒醇處置、"
-           "Surviving Sepsis Campaign、KDIGO AKI 及 STARRT-AKI/AKIKI。請以最新原文與院內規範為準。")
+st.divider()
+with st.expander(f"📚 文獻依據（最後查證 {EVIDENCE_REVIEWED}）"):
+    st.caption(
+        "建議文字中的 [代號] 對應下表。本程式為教學與決策輔助用途，"
+        "引用的是各學會原始聲明，非任何訂閱資料庫之內容；"
+        "臨床使用請以最新原文與院內規範為準。"
+    )
+    for tag, r in REFS.items():
+        st.markdown(f"**[{tag}]** {r['title']}　*{r['source']}*　{r['year']}")
+        if r.get('note'):
+            st.caption(f"　↳ {r['note']}")
+        if r.get('url'):
+            st.caption(f"　{r['url']}")
+
+st.caption("⚠️ 臨床決策輔助工具，不取代醫師判斷。所有劑量以院內藥典與毒物中心為準。")
