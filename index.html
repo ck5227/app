@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>臨床教學工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#09121A; --panel:#0F1F2C; --panel-2:#16303F; --line:#254753;
+  --text:#DEEAEF; --muted:#85A1AD;
+  --sodium:#F0A83C; --trace:#57D9A3; --cool:#6FB3DE;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ink:#E6ECEF; --panel:#FFFFFF; --panel-2:#EFF4F7; --line:#C6D5DC;
+    --text:#0E1D26; --muted:#557282;
+    --sodium:#A5620B; --trace:#17754F; --cool:#2A6795;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:
+  radial-gradient(1200px 500px at 50% -10%, color-mix(in srgb,var(--cool) 9%,transparent), transparent),
+  var(--ink);
+  color:var(--text);font-family:"Noto Sans TC",system-ui,-apple-system,sans-serif;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:48px 16px 80px}
+h1{font-size:1.6rem;margin:0 0 6px;letter-spacing:.01em}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 32px}
+.card{display:block;text-decoration:none;color:inherit;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;
+  transition:.15s}
+.card+.card{margin-top:14px}
+a.card:hover{border-color:var(--cool);transform:translateY(-2px)}
+.card h2{font-size:1.1rem;margin:0 0 6px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.05em;
+  border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--sodium)}
+.tag.off{color:var(--muted)}
+.card p{margin:0;font-size:.92rem;color:var(--muted)}
+.go{margin-top:12px;font-size:.88rem;color:var(--cool);font-weight:500}
+.note{margin-top:36px;font-size:.84rem;color:var(--muted);
+  border-top:1px solid var(--line);padding-top:16px}
+code{font-family:"IBM Plex Mono",monospace;font-size:.85em;
+  background:var(--panel-2);padding:1px 6px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>臨床教學工具</h1>
+  <p class="sub">急診與臨床毒物學的教學小工具。僅供教育用途，不取代臨床判斷。</p>
+
+  <a class="card" href="nightshift3.html">
+    <h2>值班 03:00 <span class="tag">可直接遊玩</span></h2>
+    <p>高陰離子隙代謝性酸中毒的鑑別診斷訓練。五個情境（MALA、甲醇中毒、eDKA、
+       壞死性軟組織感染、水楊酸中毒），每個動作都消耗時間，病人的外觀與生命徵象
+       會隨時間改變。結算檢討的是推理過程，不是結果。</p>
+    <div class="go">開始 →</div>
+  </a>
+
+  <div class="card">
+    <h2>AcidoScope <span class="tag off">需本機執行</span></h2>
+    <p>高陰離子隙代謝性酸中毒的決策輔助：解析檢驗值與用藥清單，並列評分可能病因、
+       標示缺漏檢驗、評估體外清除指徵。純本地運算，無外部 API。</p>
+    <p style="margin-top:10px">這是 Streamlit 應用，GitHub Pages 只能放靜態檔案，
+       無法在這裡執行。下載 <code>app.py</code> 後在本機跑：</p>
+    <p style="margin-top:8px"><code>pip install -r requirements.txt</code><br>
+       <code>streamlit run app.py</code></p>
+  </div>
+
+  <p class="note">原始碼：<a href="https://github.com/ck5227/app" style="color:var(--cool)">github.com/ck5227/app</a>　·
+     臨床決策輔助工具，所有劑量以院內藥典與毒物中心為準。</p>
+
+</div>
+</body>
+</html>
