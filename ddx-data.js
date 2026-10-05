@@ -56,7 +56,8 @@ const REFS = {
     key: 'Dix-Hallpike 誘發出伴隨眩暈之扭轉、上跳型眼振時，診斷為後半規管 BPPV。'
        + '不應常規以抗組織胺或苯二氮平類等前庭抑制劑治療 BPPV。'
        + '已診斷 BPPV 且無不符合之徵象者，不建議影像或前庭功能檢查。'
-       + '症狀持續者應評估未緩解之 BPPV 或其他周邊、中樞疾病。',
+       + '症狀持續者應評估未緩解之 BPPV 或其他周邊、中樞疾病。'
+       + 'BPPV 為成人最常見之前庭疾病，終生盛行率 2.4%；後半規管型占 85–95%。',
     limit: '對象為 BPPV；不適用於持續性眩暈之急性前庭症候群。',
     verified: '2026-10-06'
   },
@@ -76,8 +77,49 @@ const REFS = {
        + '右上腹痛以超音波為首選；電腦斷層與超音波已取代常規腹部 X 光，X 光僅在資源受限且懷疑穿孔、腸阻塞或異物時有角色。'
        + '使用 NSAID 應提高對胃炎或消化性潰瘍之懷疑。上腹痛之鑑別包括心絞痛、心肌梗塞與心包膜炎。'
        + '疼痛由臍周轉移至右下腹，對闌尾炎之 LR+ 為 3.2；孕婦疑闌尾炎以超音波為首選，不確定時優先 MRI。'
-       + '床邊超音波可用於評估主動脈瘤、膽囊炎、異位妊娠與闌尾炎。',
+       + '床邊超音波可用於評估主動脈瘤、膽囊炎、異位妊娠與闌尾炎。'
+       + '常見診斷依序為腸胃炎 10.8%、非特異性腹痛 10.4%、膽結石 4.5%、泌尿道結石 4.3%、憩室炎 3.8%、闌尾炎 3.8%；約 10% 為泌尿道病因。'
+       + '似然比：Murphy sign LR+ 15.6；右下腹痛 LR+ 7.3–8.5；腹脹 LR+ 5.8；腹部手術史 LR+ 3.9；發燒對闌尾炎 LR+ 1.9；憩室炎臨床印象 LR+ 32。'
+       + '靜止不動提示腹膜炎，扭動不安提示膽絞痛或腎絞痛；腸音消失為警訊但診斷角色有限。'
+       + '在合適情境下 lipase 高於正常上限三倍提示胰臟炎。結石專用電腦斷層可保留給 >50 歲無結石史、>75 歲、疼痛難控、腹部壓痛或發燒者。'
+       + '非局部化之急性腹痛通常需做含顯影之腹骨盆電腦斷層。免疫正常且無危險因子者，憩室炎可臨床診斷。'
+       + '腹部手術、放射治療、克隆氏症或惡性腫瘤病史應提高對小腸阻塞之懷疑。',
     limit: '美國家庭醫學會之綜論文章，非 GRADE 指引；對象為未懷孕成人之診斷評估，不涵蓋治療。',
+    verified: '2026-10-06'
+  },
+
+  NICE_NG126: {
+    t: 'Ectopic pregnancy and miscarriage: diagnosis and initial management (NG126)',
+    src: 'NICE guideline', yr: 2019, sec: '2026-06-17 更新；第 1.4 節 Symptoms and signs and initial assessment',
+    url: 'https://www.nice.org.uk/guidance/ng126/chapter/symptoms-and-signs-of-ectopic-pregnancy-and-initial-assessment',
+    strength: 'NICE 正式指引',
+    key: '1.4.1 血流動力不穩或疼痛、出血程度令人擔憂者直接送急診。'
+       + '1.4.2 異位妊娠非典型表現很常見。'
+       + '1.4.3 常見症狀為腹部或骨盆痛、無月經、陰道出血；其他包括腸胃症狀、頭暈或暈厥、肩尖痛、泌尿道症狀、排便疼痛。'
+       + '1.4.5 評估育齡女性時應意識到可能懷孕，即使症狀不典型也考慮驗孕；異位妊娠之表現可類似腸胃或泌尿道感染。'
+       + '1.4.8 即使沒有危險因子也應排除異位妊娠，約三分之一病人沒有已知危險因子。',
+    limit: '英國照護體系之轉介流程（早期妊娠評估單位）需對應本院婦產科會診流程。',
+    verified: '2026-10-06'
+  },
+  WSES_AMI2022: {
+    t: 'Acute mesenteric ischemia: updated guidelines of the World Society of Emergency Surgery',
+    src: 'World Journal of Emergency Surgery', yr: 2022, sec: 'Bala M, Catena F, Kashuk J, et al. 17:54',
+    url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC9580452/',
+    strength: 'GRADE 分級之國際外科指引',
+    key: '劇烈腹痛與理學檢查不成比例者，應假設為急性腸繫膜缺血直到排除（強建議，1C）。'
+       + '無單一生物標記可確診，乳酸、白血球與 D-dimer 可輔助（弱建議，2B）。'
+       + '疑似者應立即施行 CT 血管攝影，不得延遲（強建議，1A）；診斷每延遲 6 小時，死亡率加倍。'
+       + '動脈阻塞且具備專業時，以血管內再灌流為首選（強建議，1C）。',
+    limit: '外科學會指引；再灌流方式取決於院內血管介入能力。',
+    verified: '2026-10-06'
+  },
+  ACS2025: {
+    t: '2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes',
+    src: 'J Am Coll Cardiol / Circulation', yr: 2025, sec: 'JACC 2025；doi:10.1016/j.jacc.2024.11.009',
+    url: 'https://www.jacc.org/doi/10.1016/j.jacc.2024.11.009',
+    strength: 'ACC/AHA 正式指引',
+    key: '疑似急性冠心症者，應於首次醫療接觸 10 分鐘內取得並判讀 12 導程心電圖，以辨識 STEMI（Class 1，LOE B-NR）。',
+    limit: '本系統僅引用初始心電圖時效；後續 troponin 策略與治療請查閱全文。',
     verified: '2026-10-06'
   },
 
@@ -92,7 +134,8 @@ const REFS = {
        + '病史應涵蓋共病、醫療相關暴露（化療、透析等）、藥物史（類固醇、免疫抑制劑、化療藥物）與 TOCC 接觸史（旅遊、職業、接觸、群聚）。'
        + '腦膜炎之表現包括發燒、頭痛、噴射狀嘔吐、懼光、頸部痠痛與意識變化；理學檢查可見頸部僵硬、搖頭加劇頭痛、Kernig 與 Brudzinski 徵象。'
        + '壞死性筋膜炎之警訊為皮膚病灶擴散迅速、不成比例的劇痛、出血性水泡、心搏過速、尿量減少與意識變化。'
-       + '診斷病毒感染前應確認：具典型上呼吸道或腸胃炎症狀、病程在可預期範圍、無定位性細菌感染徵象。',
+       + '診斷病毒感染前應確認：具典型上呼吸道或腸胃炎症狀、病程在可預期範圍、無定位性細菌感染徵象。'
+       + '健康成人之發燒大多數由病毒引起，且多為自限性病程。',
     limit: '2018 年專家綜論。文中提及之「早期目標導向療法（EGDT）」已於 ProCESS、ARISE、ProMISe 試驗後不再建議，'
          + '本系統不引用該部分；敗血症之處置以 SSC 2026 為準。',
     verified: '2026-10-06'
@@ -420,7 +463,8 @@ const COMPLAINTS = {
         reassess: '診斷成立後仍應確認病人可獨立行走再考慮離院；無法行走者不論 HINTS 結果為何都應留觀。'
       },
       {
-        id: 'bppv', name: '良性陣發性姿勢性眩暈', danger: false,
+        id: 'bppv', name: '良性陣發性姿勢性眩暈（BPPV）', danger: false,
+        common: { rank: 1, ref: 'AAOHNS2017', note: '成人最常見之前庭疾病，終生盛行率 2.4%' },
         why: '陣發、短暫、由頭位改變誘發，是門急診最常見的眩暈原因。',
         rules: [
           { f: 'pattern', want: '陣發性、有誘發', s: '陣發性且有誘發因素' },
@@ -481,193 +525,356 @@ const COMPLAINTS = {
   },
 
   // ===================================================================
-  // 腹痛（危險診斷完整，治療細節較淺）
+  // 腹痛（依 AFP 2023、NICE NG126、WSES 2022、ACC/AHA 2025 重寫）
   // ===================================================================
   abdo: {
     name: '腹痛',
     icon: '◍',
-    tagline: '年齡與懷孕可能性會整個改寫鑑別順序',
-    primer: '老年人的腹痛可以沒有發燒、沒有白血球上升、沒有腹膜徵象。'
-          + '以年輕人的標準去評估高齡腹痛，是這個主訴最常見的失誤來源。',
+    tagline: '先辨識危險，再定位疼痛；年齡與懷孕可能性會改寫鑑別順序',
+    primer: '疼痛位置是線索，不是診斷。高齡、免疫低下與肥胖病人之理學表現常較不明顯。',
     groups: [
       { g: '基本資料', fields: [
         { id: 'age', label: '年齡', type: 'num', unit: '歲' },
         { id: 'sex', label: '生理性別', type: 'choice', opts: ['男', '女'] },
         { id: 'preg', label: '可能懷孕', type: 'tri',
           showIf: f => f.sex === '女' && (f.age === null || (f.age >= 12 && f.age <= 55)),
-          hint: '育齡女性腹痛，未驗 hCG 前不可排除異位妊娠' }
+          hint: '育齡女性即使症狀不典型也應驗孕' }
       ]},
       { g: '生命徵象', fields: [
         { id: 'sbp', label: '收縮壓', type: 'num', unit: 'mmHg' },
         { id: 'hr', label: '心跳', type: 'num', unit: '/min' },
         { id: 'temp', label: '體溫', type: 'num', unit: '°C', step: 0.1 },
+        { id: 'spo2', label: 'SpO₂', type: 'num', unit: '%' },
         { id: 'vt', label: '量測時間', type: 'text', ph: '例如 03:20' }
       ]},
-      { g: '疼痛特性', fields: [
-        { id: 'onset_h', label: '症狀開始至今', type: 'num', unit: '小時' },
-        { id: 'sudden', label: '突然發作（可明確指出發作的那一刻）', type: 'tri' },
-        { id: 'site', label: '主要位置', type: 'choice',
-          opts: ['上腹', '右上腹', '右下腹', '左下腹', '臍周', '腰背', '全腹'] },
-        { id: 'oop', label: '疼痛程度遠超過理學檢查發現', type: 'tri',
-          hint: '急性腸繫膜缺血的標誌性表現' },
-        { id: 'perit', label: '腹膜徵象（反彈痛、肌衛）', type: 'tri' }
+      { g: '主要疼痛位置', core: true, fields: [
+        { id: 'site', label: '病人的右側顯示在左邊', type: 'grid',
+          opts: ['ruq', 'epi', 'luq', 'rflank', 'diffuse', 'lflank', 'rlq', 'pelvis', 'llq'],
+          labels: { ruq: '右上腹', epi: '上腹中央', luq: '左上腹', rflank: '右側腰', diffuse: '臍周／全腹',
+                    lflank: '左側腰', rlq: '右下腹', pelvis: '下腹／骨盆', llq: '左下腹' } }
       ]},
-      { g: '病史', fields: [
-        { id: 'af', label: '心房顫動或近期栓塞事件', type: 'tri' },
-        { id: 'vasc', label: '已知血管疾病或動脈瘤', type: 'tri' },
-        { id: 'surg', label: '腹部手術史', type: 'tri' },
-        { id: 'immuno', label: '免疫抑制（化療、類固醇、移植）', type: 'tri' },
-        { id: 'nsaid', label: '使用 NSAID 或抗凝血劑', type: 'tri' }
+      { g: '危險徵象', core: true, fields: [
+        { id: 'sudden', label: '突然發作或劇烈疼痛', type: 'tri' },
+        { id: 'perit', label: '反彈痛、肌衛或腹部僵硬', type: 'tri' },
+        { id: 'oop', label: '疼痛程度與理學檢查不成比例', type: 'tri' },
+        { id: 'syncope', label: '暈厥、意識改變或低灌流', type: 'tri' }
+      ]},
+      { g: '伴隨症狀與理學檢查', fields: [
+        { id: 'diarrhea', label: '腹瀉', type: 'tri' },
+        { id: 'distend', label: '腹脹或停止排氣排便', type: 'tri' },
+        { id: 'migrate', label: '疼痛由臍周轉移至右下腹', type: 'tri' },
+        { id: 'murphy', label: 'Murphy sign 陽性', type: 'tri' },
+        { id: 'jaundice', label: '黃疸', type: 'tri' },
+        { id: 'urinary', label: '血尿、排尿症狀或腰側絞痛', type: 'tri' },
+        { id: 'chest', label: '胸悶、冒冷汗或喘', type: 'tri' },
+        { id: 'vagbleed', label: '陰道出血', type: 'tri', showIf: f => f.sex === '女' }
+      ]},
+      { g: '病史與用藥', fields: [
+        { id: 'af', label: '心房顫動、動脈粥樣硬化或高凝狀態', type: 'tri' },
+        { id: 'surg', label: '腹部手術史或疝氣', type: 'tri' },
+        { id: 'aaa', label: '已知主動脈瘤或主動脈疾病', type: 'tri' },
+        { id: 'immuno', label: '免疫抑制', type: 'tri' },
+        { id: 'nsaid', label: '使用 NSAID 或消化性潰瘍史', type: 'tri' },
+        { id: 'gallhx', label: '膽結石病史', type: 'tri' }
       ]}
     ],
     redflags: [
-      { if: f => f.sbp !== null && f.sbp < 90, msg: '血流動力不穩併腹痛：這類病人常需緊急復甦或手術，先穩定循環再鑑別', refs: ['AFP2023ABD'] },
-      { if: f => f.preg === null && f.sex === '女', msg: '育齡女性之懷孕可能性仍為未知：所有停經前女性急性腹痛都應驗孕，即使使用可靠避孕方式', refs: ['AFP2023ABD'] },
-      { if: f => f.oop === true, msg: '疼痛程度與理學檢查不成比例：急性腸繫膜缺血之標誌，延遲診斷死亡率可接近 80%', refs: ['AMI_ED', 'AFP2023ABD'] },
+      { if: f => f.sbp !== null && f.sbp < 90,
+        msg: '收縮壓 < 90 mmHg：血流動力不穩之腹痛常需緊急復甦或手術，先穩定再鑑別', refs: ['AFP2023ABD'] },
+      { if: f => f.perit === true,
+        msg: '腹膜炎徵象：常需緊急復甦或手術，立即資深醫師與外科評估', refs: ['AFP2023ABD'] },
+      { if: f => f.oop === true,
+        msg: '疼痛與理學檢查不成比例：應先假設為急性腸繫膜缺血直到排除，並儘速安排 CT 血管攝影',
+        refs: ['WSES_AMI2022', 'AFP2023ABD'] },
+      { if: f => f.sex === '女' && (f.age === null || (f.age >= 12 && f.age <= 55)) && f.preg === null,
+        msg: '育齡女性懷孕可能性未知：即使症狀不典型也應驗孕；約三分之一異位妊娠沒有已知危險因子',
+        refs: ['NICE_NG126', 'AFP2023ABD'] },
+      { if: f => f.preg === true && (f.syncope === true || (f.sbp !== null && f.sbp < 100)),
+        msg: '懷孕可能合併暈厥或低血壓：視為異位妊娠破裂直到排除，立即婦產科評估', refs: ['NICE_NG126'] },
       { if: f => f.age !== null && f.age >= 60 && f.sudden === true,
-        msg: '≥60 歲突發腹痛或腰背痛：在排除腹主動脈瘤破裂之前，不應診斷為腎絞痛或肌肉骨骼疼痛', refs: ['AAA_MASQ', 'GERIABD'] },
-      { if: f => f.age !== null && f.age >= 65 && f.temp !== null && f.temp < 37.5,
-        msg: '高齡病人可無發燒仍有嚴重腹腔感染：體溫正常不足以降低警覺', refs: ['GERIABD'] }
+        msg: '≥60 歲突發或劇烈腹痛：主動脈瘤破裂與中空器官穿孔須優先排除；勿先診斷為腎絞痛或肌肉痛',
+        refs: ['AFP2023ABD', 'AAA_MASQ'] },
+      { if: f => (f.age !== null && f.age >= 65) || f.immuno === true,
+        msg: '高齡或免疫抑制：發燒、白血球上升與腹膜徵象可能付之闕如，應降低影像門檻',
+        refs: ['AFP2023ABD', 'GERIABD'] }
     ],
     dx: [
+      // ---------------- 常見 ----------------
       {
-        id: 'raaa', name: '腹主動脈瘤破裂', danger: true,
-        why: '可偽裝成腎絞痛、憩室炎、闌尾炎甚至單純暈厥。對高齡新發腰背痛，這是必須主動排除而非等待浮現的診斷。',
+        id: 'gastro', name: '腸胃炎／非特異性腹痛', danger: false,
+        common: { rank: 1, ref: 'AFP2023ABD', note: '急診腹痛最常見：腸胃炎 10.8%、非特異性腹痛 10.4%' },
+        why: '最常見，但屬排除性診斷。只有在危險診斷已被適當評估後才成立。',
         rules: [
-          { f: 'sudden', want: true, s: '突然發作' },
-          { f: 'site', want: '腰背', s: '腰背部疼痛' },
-          { f: 'vasc', want: true, s: '已知血管疾病或動脈瘤' }
+          { f: 'diarrhea', want: true, s: '腹瀉' },
+          { f: 'perit', want: false, s: '無腹膜炎徵象' }
+        ],
+        against: [
+          { f: 'perit', want: true, s: '有腹膜炎徵象' },
+          { f: 'oop', want: true, s: '疼痛與理學檢查不成比例' }
+        ],
+        ask: [
+          { q: '噁心嘔吐是否足以解釋病況？', why: '噁心嘔吐雖常見於腸胃炎，也常見於小腸阻塞、闌尾炎與腸麻痺', refs: ['AFP2023ABD'] }
+        ],
+        tests: [],
+        reassess: '工作診斷而非結論。重測生命徵象並重做腹部檢查；持續局部疼痛或惡化應重新展開鑑別。'
+      },
+      {
+        id: 'gall', name: '膽結石／急性膽囊炎', danger: false, regions: ['ruq', 'epi'],
+        common: { rank: 2, ref: 'AFP2023ABD', note: '急診腹痛第三常見：膽結石 4.5%' },
+        why: '右上腹或上腹痛之常見原因。單一臨床徵象不足以確診，需併同超音波。',
+        rules: [
+          { f: 'site', any: ['ruq', 'epi'], s: '右上腹或上腹痛', weak: true },
+          { f: 'murphy', want: true, s: 'Murphy sign 陽性（LR+ 15.6）', decisive: true },
+          { f: 'temp', gte: 38, s: '發燒' },
+          { f: 'gallhx', want: true, s: '膽結石病史' }
         ],
         against: [],
         ask: [
-          { q: '是否為此生最劇烈、且可指出發作的那一秒？', why: '血管性災難多為瞬間達到最痛', refs: ['AAA_MASQ'] },
-          { q: '過去有無診斷過腹主動脈瘤？有無抽菸史？', why: '主要危險因子', refs: ['AAA_MASQ'] }
+          { q: '有無發燒、噁心嘔吐或黃疸？', why: '急性膽囊炎可合併發燒與嘔吐，黃疸較少見', refs: ['AFP2023ABD'] }
         ],
         tests: [
-          { t: '床邊超音波（主動脈)', purpose: '快速測量主動脈直徑',
-            note: '可於床邊數分鐘內完成，不需移動不穩定病人。', refs: ['AFP2023ABD', 'AAA_MASQ'], yield: 'high' },
-          { t: '電腦斷層（含顯影）', purpose: '確認破裂與解剖',
-            caveat: '血流動力不穩者不應為了做電腦斷層而延誤手術會診。', refs: ['AAA_MASQ'], yield: 'high' },
-          { t: '本院影像排程與放射科會診時效', purpose: '估算可行的檢查時間',
-            note: '（院內流程尚未建立，本條依引用治理規則自動封鎖）',
-            refs: ['LOCAL_FLOW'], yield: 'mid' }
+          { t: '右上腹超音波', purpose: '評估膽囊炎與膽石',
+            note: '右上腹痛之首選影像；床邊超音波亦可協助。', refs: ['AFP2023ABD'], yield: 'high' }
         ],
-        reassess: '床邊超音波未見動脈瘤可大幅降低可能性；但影像品質受腸氣影響，高度懷疑時仍應進一步評估。'
+        reassess: '膽石不一定是本次疼痛原因；合併黃疸、發燒或循環異常者另評估膽管炎與敗血症。'
+      },
+      {
+        id: 'stone', name: '泌尿道結石', danger: false, regions: ['rflank', 'lflank', 'rlq', 'llq', 'pelvis'],
+        common: { rank: 3, ref: 'AFP2023ABD', note: '急診腹痛第四常見：泌尿道結石 4.3%' },
+        why: '突發腰側絞痛之常見原因，但高齡新發「腎絞痛」須先排除主動脈瘤破裂。',
+        rules: [
+          { f: 'site', any: ['rflank', 'lflank'], s: '腰側疼痛' },
+          { f: 'urinary', want: true, s: '血尿、排尿症狀或腰側絞痛' }
+        ],
+        against: [],
+        ask: [
+          { q: '是否坐立難安、來回扭動？', why: '扭動不安較常見於膽絞痛或腎絞痛，靜止不動則提示腹膜炎', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: '超音波（含床邊超音波）', purpose: '評估腎水腫與結石', refs: ['AFP2023ABD'], yield: 'high' },
+          { t: '結石專用電腦斷層', purpose: '確認結石與併發症',
+            caveat: '可保留給 >50 歲且無結石史、>75 歲、疼痛難以控制、腹部壓痛或發燒者。',
+            refs: ['AFP2023ABD'], yield: 'mid' }
+        ],
+        reassess: '≥60 歲首次腎絞痛，應先排除主動脈瘤破裂；合併發燒者評估感染性阻塞。'
+      },
+      {
+        id: 'div', name: '急性憩室炎', danger: false, regions: ['llq', 'rlq', 'pelvis'],
+        common: { rank: 4, ref: 'AFP2023ABD', note: '急診腹痛第五常見：憩室炎 3.8%' },
+        why: '下腹痛合併發燒或排便改變；複雜性者可合併膿瘍或穿孔。',
+        rules: [
+          { f: 'site', any: ['llq', 'rlq', 'pelvis'], s: '下腹痛', weak: true },
+          { f: 'temp', gte: 38, s: '發燒' }
+        ],
+        against: [],
+        ask: [
+          { q: '有無厭食、噁心但不吐、排便習慣改變？', why: '左下腹痛合併這些症狀與發燒提示憩室炎', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: '電腦斷層（含顯影）', purpose: '確認診斷並評估併發症',
+            note: '臨床印象之 LR+ 為 32；免疫正常且無危險因子者可臨床診斷。', refs: ['AFP2023ABD'], yield: 'high' }
+        ],
+        reassess: '免疫抑制或全身不適者另評估；膿瘍、腹膜炎或惡化者會診外科。'
+      },
+      {
+        id: 'appe', name: '急性闌尾炎', danger: false, regions: ['rlq', 'diffuse', 'pelvis'],
+        common: { rank: 5, ref: 'AFP2023ABD', note: '急診腹痛第五常見：闌尾炎 3.8%' },
+        why: '常見，但高齡與孕婦表現常不典型，延遲診斷穿孔率較高。',
+        rules: [
+          { f: 'site', any: ['rlq'], s: '右下腹痛（LR+ 7.3–8.5）' },
+          { f: 'migrate', want: true, s: '疼痛由臍周轉移至右下腹（LR+ 3.2）' },
+          { f: 'perit', want: true, s: '腹膜刺激徵象' },
+          { f: 'temp', gte: 38, s: '發燒（LR+ 1.9）' }
+        ],
+        against: [],
+        ask: [
+          { q: '疼痛是否由臍周轉移至右下腹？', why: '轉移性疼痛 LR+ 3.2；右下腹痛 LR+ 7.3–8.5', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: '超音波（必要時加做選擇性電腦斷層）', purpose: '確認闌尾發炎',
+            note: '常規超音波合併選擇性電腦斷層，敏感度優於常規電腦斷層且減少輻射。',
+            caveat: '孕婦以超音波為首選，結果不確定時優先 MRI。', refs: ['AFP2023ABD'], yield: 'high' }
+        ],
+        reassess: '單一陰性發現不足以排除；症狀持續者應重新評估或追蹤影像。'
+      },
+      {
+        id: 'uti', name: '泌尿道感染／腎盂腎炎', danger: false, regions: ['rflank', 'lflank', 'pelvis'],
+        common: { rank: 6, ref: 'AFP2023ABD', note: '約 10% 的急診腹痛為泌尿道病因' },
+        why: '腹痛的常見腹外病因；合併阻塞時屬急症。',
+        rules: [
+          { f: 'urinary', want: true, s: '排尿症狀或腰側疼痛' },
+          { f: 'temp', gte: 38, s: '發燒' }
+        ],
+        against: [],
+        ask: [
+          { q: '有無排尿疼痛、頻尿或血尿？', why: '約一成急診腹痛為泌尿道病因', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: '尿液常規', purpose: '評估感染與血尿', refs: ['AFP2023ABD'], yield: 'high' }
+        ],
+        reassess: '合併發燒與阻塞、無尿或循環異常者應立即升級處置。'
+      },
+      {
+        id: 'pan', name: '急性胰臟炎', danger: false, regions: ['epi', 'luq'],
+        why: '上腹痛可延伸至背部。需持續尋找病因，不因飲酒史就認定為酒精性。',
+        rules: [
+          { f: 'site', any: ['epi', 'luq'], s: '上腹或左上腹痛', weak: true },
+          { f: 'gallhx', want: true, s: '膽結石病史' }
+        ],
+        against: [],
+        ask: [
+          { q: '疼痛是否延伸到背部？有無飲酒或膽石史？', why: '上腹痛之鑑別包括胰臟炎', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: 'Lipase', purpose: '支持胰臟炎診斷',
+            note: '在合適臨床情境下，高於正常上限三倍提示胰臟炎。', refs: ['AFP2023ABD'], yield: 'high' }
+        ],
+        reassess: '確診後仍應尋找病因，並監測器官功能。'
+      },
+
+      // ---------------- 危險（不能漏） ----------------
+      {
+        id: 'raaa', name: '腹主動脈瘤破裂／主動脈急症', danger: true,
+        why: '可偽裝成腎絞痛、憩室炎、闌尾炎甚至單純暈厥。高齡新發腰背痛須主動排除。',
+        rules: [
+          { f: 'sudden', want: true, s: '突然發作或劇烈疼痛' },
+          { f: 'site', any: ['rflank', 'lflank', 'diffuse', 'epi'], s: '腰背或腹中央疼痛', weak: true },
+          { f: 'aaa', want: true, s: '已知主動脈瘤', decisive: true },
+          { f: 'syncope', want: true, s: '暈厥或低灌流' },
+          { f: 'age', gte: 60, s: '年齡 ≥ 60', weak: true }
+        ],
+        against: [],
+        ask: [
+          { q: '是否可指出發作的那一刻？是否延伸到背部？', why: '突發或劇烈腹痛之可能病因包括主動脈瘤破裂', refs: ['AFP2023ABD', 'AAA_MASQ'] }
+        ],
+        tests: [
+          { t: '床邊超音波（主動脈）', purpose: '快速測量主動脈直徑',
+            note: '可於床邊完成，不需移動不穩定病人。', refs: ['AFP2023ABD', 'AAA_MASQ'], yield: 'high' },
+          { t: '電腦斷層血管攝影', purpose: '確認破裂與解剖',
+            caveat: '血流動力不穩者不應為了做影像而延誤手術會診。', refs: ['AAA_MASQ'], yield: 'high' },
+          { t: '本院影像排程與放射科會診時效', purpose: '估算可行的檢查時間',
+            note: '（院內流程尚未建立，本條依引用治理規則自動封鎖）', refs: ['LOCAL_FLOW'], yield: 'mid' }
+        ],
+        reassess: '床邊超音波品質受腸氣影響；高度懷疑時仍應進一步評估。'
       },
       {
         id: 'ami', name: '急性腸繫膜缺血', danger: true,
-        why: '症狀多變且早期理學檢查可以完全正常，延遲診斷之死亡率接近 80%。存活高度仰賴急診端的及時懷疑。',
+        why: '早期理學檢查可以完全正常；每延遲 6 小時診斷，死亡率加倍。',
         rules: [
-          { f: 'oop', want: true, s: '疼痛程度遠超過理學檢查發現' },
-          { f: 'af', want: true, s: '心房顫動或近期栓塞事件' },
-          { f: 'vasc', want: true, s: '已知血管疾病' },
+          { f: 'oop', want: true, s: '疼痛與理學檢查不成比例', decisive: true },
+          { f: 'af', want: true, s: '心房顫動、動脈粥樣硬化或高凝狀態' },
+          { f: 'age', gte: 70, s: '年齡 > 70', weak: true },
           { f: 'sudden', want: true, s: '突然發作' }
         ],
         against: [],
         ask: [
-          { q: '有無心房顫動、動脈粥樣硬化、血管炎或高凝狀態？年齡是否大於 70 歲？', why: '腸繫膜缺血之危險因子，存在時應考慮 CT 血管攝影', refs: ['AFP2023ABD'] }
+          { q: '有無心房顫動、動脈粥樣硬化、血管炎或高凝狀態？', why: '腸繫膜缺血危險因子，存在時應考慮 CT 血管攝影', refs: ['AFP2023ABD', 'WSES_AMI2022'] }
         ],
         tests: [
           { t: 'CT 血管攝影', purpose: '確認腸繫膜血管阻塞',
-            note: '有危險因子且臨床懷疑時之首選影像。', refs: ['AFP2023ABD', 'AMI_ED'], yield: 'high' },
-          { t: '乳酸', purpose: '評估組織灌流',
-            caveat: '應檢測，但早期可能正常；正常不能排除腸繫膜缺血。', refs: ['AFP2023ABD', 'AMI_ED'], yield: 'mid' }
+            note: '疑似時應立即施行，不得延遲（強建議、高品質證據 1A）。',
+            refs: ['WSES_AMI2022'], yield: 'high' },
+          { t: '乳酸、D-dimer', purpose: '輔助判斷',
+            caveat: '無單一生物標記可確診（弱建議 2B）；乳酸早期可能正常，正常不能排除。',
+            refs: ['WSES_AMI2022', 'AFP2023ABD'], yield: 'mid' }
         ],
-        reassess: '乳酸與白血球正常不足以排除本診斷；懷疑度高時應直接安排血管攝影並照會外科。'
+        reassess: '檢驗正常不能作為延後 CT 血管攝影的理由；確診後由血管與外科團隊評估再灌流。'
       },
       {
-        id: 'ectopic', name: '異位妊娠', danger: true,
-        why: '育齡女性腹痛的首要排除項目。病人否認性行為或自認無懷孕可能，都不足以取代檢驗。',
-        rules: [
-          { f: 'preg', want: true, s: '懷孕可能性存在' },
-          { f: 'site', want: '右下腹', s: '下腹痛' }
-        ],
-        against: [
-          { f: 'sex', want: '男', s: '生理性別男' }
-        ],
-        ask: [
-          { q: '最後一次月經？有無骨盆痙攣痛、陰道出血？性行為與避孕方式？', why: '育齡女性腹痛之必要病史', refs: ['AFP2023ABD'] }
-        ],
-        tests: [
-          { t: '懷孕檢測（尿液或血清 hCG）', purpose: '確立或排除懷孕',
-            note: '所有停經前女性急性腹痛皆應檢測，即使使用可靠避孕方式。', refs: ['AFP2023ABD'], yield: 'high' },
-          { t: '骨盆超音波（經陰道）', purpose: 'hCG 陽性時確認著床位置',
-            note: '床邊超音波亦可協助評估異位妊娠。', refs: ['AFP2023ABD'], yield: 'high' }
-        ],
-        reassess: 'hCG 陰性方可將本診斷移出考慮。陽性但經陰道超音波未能確認子宮內或異位妊娠者，'
-                + '屬「位置不明之妊娠」，不能排除異位妊娠，需連續追蹤 hCG 與超音波。'
-      },
-      {
-        id: 'perf', name: '消化道穿孔', danger: true,
-        why: '高齡與使用類固醇者可以沒有明顯腹膜徵象。',
+        id: 'perf', name: '消化道穿孔／腹膜炎', danger: true,
+        why: '高齡與使用類固醇者可沒有明顯腹膜徵象；初次生命徵象穩定不能排除。',
         rules: [
           { f: 'sudden', want: true, s: '突然發作' },
-          { f: 'perit', want: true, s: '腹膜徵象' },
-          { f: 'nsaid', want: true, s: '使用 NSAID 或抗凝血劑' }
+          { f: 'perit', want: true, s: '腹膜炎徵象', decisive: true },
+          { f: 'nsaid', want: true, s: '使用 NSAID 或消化性潰瘍史' }
         ],
         against: [],
         ask: [
-          { q: '有無使用 NSAID？消化性潰瘍病史？', why: '使用 NSAID 應提高對胃炎或消化性潰瘍之懷疑', refs: ['AFP2023ABD'] }
+          { q: '有無使用 NSAID？消化性潰瘍病史？', why: '使用 NSAID 應提高對消化性潰瘍之懷疑', refs: ['AFP2023ABD'] }
         ],
         tests: [
-          { t: '電腦斷層（含顯影）', purpose: '評估中空器官穿孔',
-            note: '突發或劇烈腹痛之可能病因包括中空器官穿孔。', refs: ['AFP2023ABD'], yield: 'high' },
+          { t: '電腦斷層（含顯影）', purpose: '評估中空器官穿孔', refs: ['AFP2023ABD'], yield: 'high' },
           { t: '立位胸部或腹部 X 光', purpose: '偵測游離氣體',
             caveat: '電腦斷層與超音波已取代常規 X 光；X 光僅在資源受限時有角色。', refs: ['AFP2023ABD'], yield: 'low' }
         ],
         reassess: '高齡或免疫抑制者缺乏腹膜徵象不代表沒有穿孔。'
       },
       {
-        id: 'appe', name: '急性闌尾炎', danger: false,
-        why: '常見，但在高齡與孕婦的表現常不典型，且穿孔率較高。',
+        id: 'ectopic', name: '異位妊娠', danger: true,
+        showIf: f => f.sex !== '男' && (f.age === null || (f.age >= 12 && f.age <= 55)) && f.preg !== false,
+        why: '非典型表現很常見；症狀可類似腸胃或泌尿道疾病。約三分之一沒有已知危險因子。',
         rules: [
-          { f: 'site', want: '右下腹', s: '右下腹痛' },
-          { f: 'perit', want: true, s: '腹膜徵象' }
+          { f: 'preg', want: true, s: '懷孕可能性存在', decisive: true },
+          { f: 'vagbleed', want: true, s: '陰道出血' },
+          { f: 'syncope', want: true, s: '暈厥、頭暈或低灌流' },
+          { f: 'site', any: ['pelvis', 'rlq', 'llq'], s: '下腹或骨盆痛', weak: true }
         ],
         against: [],
         ask: [
-          { q: '疼痛是否由臍周轉移至右下腹？', why: '轉移性疼痛對闌尾炎 LR+ 3.2；右下腹痛 LR+ 7.3–8.5', refs: ['AFP2023ABD'] }
+          { q: '最後一次月經？陰道出血？肩尖痛、頭暈或暈厥？', why: '異位妊娠可有多種症狀，較少見的症狀仍可能重要', refs: ['NICE_NG126'] }
         ],
         tests: [
-          { t: '超音波（必要時加做選擇性電腦斷層）', purpose: '確認闌尾發炎',
-            note: '系統性回顧顯示常規超音波合併選擇性電腦斷層，敏感度優於常規電腦斷層且減少輻射。',
-            caveat: '孕婦以超音波為首選，結果不確定時優先 MRI。', refs: ['AFP2023ABD'], yield: 'high' }
+          { t: '懷孕檢測（尿液或血清 hCG）', purpose: '確立或排除懷孕',
+            note: '育齡女性即使症狀不典型也應驗孕，即使使用可靠避孕方式。', refs: ['NICE_NG126', 'AFP2023ABD'], yield: 'high' },
+          { t: '經陰道超音波', purpose: 'hCG 陽性時確認著床位置', refs: ['AFP2023ABD'], yield: 'high' }
         ],
-        reassess: '高齡病人診斷延遲與穿孔率顯著較高，應降低影像門檻。'
+        reassess: 'hCG 陽性但未能確認子宮內或異位妊娠者，屬「位置不明之妊娠」，不能排除異位妊娠，需追蹤至釐清。'
       },
       {
-        id: 'biliary', name: '膽道感染 / 急性膽管炎', danger: true,
-        why: '可快速進展為敗血性休克，需要的是引流而非只有抗生素。',
+        id: 'acs', name: '急性冠心症（腹外病因）', danger: true,
+        showIf: f => f.site === null || ['epi', 'ruq', 'luq'].includes(f.site) || f.chest === true,
+        why: '上腹不適可以是急性冠心症的表現；只追查腹內病因就會錯過。',
         rules: [
-          { f: 'site', want: '右上腹', s: '右上腹痛' },
-          { f: 'temp', gte: 38, s: '發燒' }
-        ],
-        against: [],
-        ask: [
-          { q: '有無發燒、噁心嘔吐或黃疸？', why: '膽囊炎可合併發燒與嘔吐，較少見黃疸；膽管炎亦在上腹與右上腹痛之鑑別中', refs: ['AFP2023ABD'] }
-        ],
-        tests: [
-          { t: '右上腹超音波', purpose: '評估膽囊炎與膽道阻塞',
-            note: '右上腹痛之首選影像。', refs: ['AFP2023ABD'], yield: 'high' }
-        ],
-        reassess: '合併低血壓或意識改變者，依敗血性休克路徑同步處置並緊急照會以安排引流。'
-      },
-      {
-        id: 'mi', name: '下壁心肌梗塞（以上腹痛表現）', danger: true,
-        why: '上腹痛可以是心肌梗塞的唯一表現，尤其糖尿病與高齡病人。不做心電圖就不會發現。',
-        rules: [
-          { f: 'site', want: '上腹', s: '上腹痛' },
-          { f: 'age', gte: 50, s: '年齡 ≥ 50' }
+          { f: 'chest', want: true, s: '胸悶、冒冷汗或喘' },
+          { f: 'site', any: ['epi'], s: '上腹痛' },
+          { f: 'age', gte: 50, s: '年齡 ≥ 50', weak: true }
         ],
         against: [],
         ask: [
           { q: '上腹痛是否可能為心因性？', why: '心絞痛、心肌梗塞與心包膜炎屬上腹痛之鑑別', refs: ['AFP2023ABD'] }
         ],
         tests: [
-          { t: '12 導程心電圖', purpose: '偵測 ST 段變化',
-            note: '上腹痛病人之低成本高產出檢查。', refs: ['PENDING_SPEC'], yield: 'high' }
+          { t: '12 導程心電圖', purpose: '辨識 STEMI',
+            note: '疑似急性冠心症，應於首次醫療接觸 10 分鐘內完成並判讀（Class 1）。',
+            refs: ['ACS2025'], yield: 'high' }
         ],
-        reassess: '初次心電圖正常不能排除，症狀持續者應重複施行。'
+        reassess: '單次初始心電圖或 troponin 正常不代表已排除；依指引序列評估。'
+      },
+      {
+        id: 'bowel', name: '腸阻塞（含絞扼）', danger: true, regions: ['diffuse', 'epi'],
+        why: '絞扼或缺血時需緊急手術；沒有手術史也可能發生。',
+        rules: [
+          { f: 'distend', want: true, s: '腹脹或停止排氣排便（LR+ 5.8）' },
+          { f: 'surg', want: true, s: '腹部手術史或疝氣（LR+ 3.9）' },
+          { f: 'site', any: ['diffuse'], s: '臍周或瀰漫性疼痛', weak: true }
+        ],
+        against: [],
+        ask: [
+          { q: '有無腹部手術、放射治療、克隆氏症或惡性腫瘤病史？', why: '應提高對小腸阻塞之懷疑', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: '電腦斷層（含顯影）', purpose: '確認阻塞並評估缺血',
+            note: '非局部化之急性腹痛通常需做含顯影之腹骨盆電腦斷層。', refs: ['AFP2023ABD'], yield: 'high' }
+        ],
+        reassess: '腸音消失為警訊，但腸音在診斷上角色有限；高度懷疑比理學發現更重要。'
+      },
+      {
+        id: 'chol', name: '急性膽管炎', danger: true, regions: ['ruq', 'epi'],
+        showIf: f => f.site === null || ['ruq', 'epi'].includes(f.site) || f.jaundice === true,
+        why: '可快速進展為敗血性休克；需要的是引流而非只有抗生素。',
+        rules: [
+          { f: 'jaundice', want: true, s: '黃疸' },
+          { f: 'temp', gte: 38, s: '發燒' },
+          { f: 'site', any: ['ruq'], s: '右上腹痛', weak: true }
+        ],
+        against: [],
+        ask: [
+          { q: '有無黃疸、發燒、全身不適？', why: '膽管炎屬右上腹與上腹痛之鑑別', refs: ['AFP2023ABD'] }
+        ],
+        tests: [
+          { t: '右上腹超音波與肝膽指數', purpose: '評估膽道阻塞', refs: ['AFP2023ABD'], yield: 'high' }
+        ],
+        reassess: '合併低血壓或意識改變者，依敗血性休克路徑同步處置。'
       }
     ]
   },
@@ -833,7 +1040,8 @@ const COMPLAINTS = {
         reassess: '旅遊史未問，此診斷就不會出現在鑑別清單上——這是本項的主要風險。'
       },
       {
-        id: 'common', name: '一般社區感染（呼吸道、泌尿道）', danger: false,
+        id: 'common', name: '一般社區感染（多為病毒、自限性）', danger: false,
+        common: { rank: 1, ref: 'TSEM2018FEVER', note: '健康成人發燒多數由病毒引起且為自限性病程' },
         why: '最常見，但必須是在危險診斷已被適當評估之後才下的結論。',
         rules: [
           { f: 'resp', want: true, s: '呼吸道症狀' },
