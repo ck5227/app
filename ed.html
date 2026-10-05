@@ -7,22 +7,14 @@
 <title>急診主訴導航</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b3c50'/%3E%3Cpath d='M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z' fill='%235ee0c0'/%3E%3C/svg%3E">
 <style>
+/* 白底為預設；深色僅在使用者以 ◐ 切換時啟用 */
 :root{
-  --bg:#F2F6F8; --panel:#FFFFFF; --panel-2:#F5F9FA; --line:#D9E4E8; --line-2:#C5D5DC;
+  --bg:#FFFFFF; --panel:#FFFFFF; --panel-2:#F6F9FA; --line:#E1E9ED; --line-2:#CBD8DE;
   --ink:#143340; --muted:#5D717D; --navy:#0B3C50; --navy-2:#15566B;
-  --teal:#007D78; --teal-ink:#00645F; --mint:#E4F6F1;
-  --red:#AE3040; --red-bg:#FFF0F1; --amber:#8A5E12; --amber-bg:#FFF6DF; --blue-bg:#EAF3F8; --blue:#225970;
-  --shadow:0 1px 2px rgba(11,60,80,.06),0 4px 14px rgba(11,60,80,.05);
+  --teal:#007D78; --teal-ink:#00645F; --mint:#E6F6F1;
+  --red:#AE3040; --red-bg:#FDF1F2; --amber:#8A5E12; --amber-bg:#FFF7E3; --blue-bg:#EEF5F9; --blue:#225970;
+  --shadow:0 1px 2px rgba(11,60,80,.05),0 6px 18px rgba(11,60,80,.06);
   color-scheme:light;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0B151B; --panel:#122029; --panel-2:#172A35; --line:#25404D; --line-2:#335565;
-    --ink:#DCE9EE; --muted:#8FA8B3; --navy:#0A2633; --navy-2:#123847;
-    --teal:#4FD1B8; --teal-ink:#7FE3CF; --mint:#123A36;
-    --red:#F07A84; --red-bg:#3A1A20; --amber:#F2C46B; --amber-bg:#352A12; --blue-bg:#16303D; --blue:#9CCBE0;
-    --shadow:none; color-scheme:dark;
-  }
 }
 :root[data-theme="dark"]{
   --bg:#0B151B; --panel:#122029; --panel-2:#172A35; --line:#25404D; --line-2:#335565;
@@ -49,7 +41,24 @@ header{background:var(--navy);color:#fff;padding:12px 24px;display:flex;align-it
 .tabs button{border:0;background:transparent;color:#CFE6EC;padding:6px 16px;border-radius:7px;font-size:15px}
 .tabs button[aria-selected="true"]{background:#fff;color:var(--navy);font-weight:700}
 :root[data-theme="dark"] .tabs button[aria-selected="true"]{background:var(--teal);color:#06231F}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tabs button[aria-selected="true"]{background:var(--teal);color:#06231F}}
+/* 白底時，鑑別三組以淡色底區分，不靠灰背景 */
+.bucket.b1{background:linear-gradient(180deg,var(--mint) 0,var(--panel) 120px)}
+.bucket.b2{background:linear-gradient(180deg,var(--red-bg) 0,var(--panel) 120px)}
+:root[data-theme="dark"] .bucket.b1,:root[data-theme="dark"] .bucket.b2{background:var(--panel)}
+.derived{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-2)}
+.derived span{font-size:13px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+.derived b{font-variant-numeric:tabular-nums;color:var(--navy)}
+:root[data-theme="dark"] .derived b{color:var(--teal-ink)}
+.pill.adm{background:var(--red-bg);color:var(--red)}
+.pill.home{background:var(--mint);color:var(--teal-ink)}
+.pill.cond{background:var(--amber-bg);color:var(--amber)}
+.dsec{border-radius:10px;padding:10px 13px;margin-top:10px;font-size:14px}
+.dsec h3{margin:0 0 4px;font-size:13.5px}
+.dsec ul{margin:0;padding-left:18px}
+.dsec li{margin:3px 0}
+.dsec.adm{background:var(--red-bg)} .dsec.adm h3{color:var(--red)}
+.dsec.home{background:var(--mint)} .dsec.home h3{color:var(--teal-ink)}
+.dsec.cond{background:var(--amber-bg)} .dsec.cond h3{color:var(--amber)}
 .hbtn{background:transparent;border:1px solid #6F93A2;color:#E3F1F5;border-radius:8px;padding:6px 12px;font-size:13.5px;text-decoration:none}
 .hbtn:hover{border-color:#fff}
 .notice{background:var(--amber-bg);color:var(--amber);font-size:13px;padding:7px 24px}
@@ -184,8 +193,9 @@ footer a{color:var(--teal-ink)}
   .buckets{grid-template-columns:1fr}
   header{padding:10px 14px;gap:10px}
   .brand small{display:none}
-  .tabs{order:3;width:100%;justify-content:space-between}
-  .tabs button{flex:1;padding:7px 4px}
+  .tabs{order:3;width:100%;justify-content:space-between;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:1 0 auto;padding:7px 10px;white-space:nowrap}
   .notice{padding:7px 14px}
   h1{font-size:20px}
 }
@@ -226,7 +236,7 @@ footer a{color:var(--teal-ink)}
       <p class="muted" id="cprimer" style="margin:0"></p>
     </section>
     <div id="alerts"></div>
-    <section class="panel"><div class="strip" id="strip"></div></section>
+    <section class="panel"><div class="strip" id="strip"></div><div class="derived" id="derived" hidden></div></section>
     <section class="panel"><div class="core" id="core"></div></section>
     <section class="buckets" id="buckets" aria-live="polite"></section>
   </main>
@@ -250,14 +260,18 @@ footer a{color:var(--teal-ink)}
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-label="診斷詳情"></aside>
 
-<script src="ddx-data.js?v=20261006d"></script>
+<script src="ddx-data.js?v=20261006e"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const STRIP=['age','sex','preg','sbp','hr','temp','spo2'];
+const STRIP=['age','sex','preg','sbp','dbp','hr','rr','temp','spo2'];
 const CORE={dizzy:['發作型態','伴隨症狀','HINTS'],abdo:[],fever:['宿主狀態','定位線索']};
-let KEY='abdo', C=null, F={}, TAG={}, OPEN=null, DTAB='why';
+const SHORT={acid:'酸中毒'};
+let KEY='abdo', C=null, F={}, DER={}, TAG={}, OPEN=null, DTAB='why';
+// 計算值（陰離子隙、滲透壓間隙、CURB-65 等）與輸入值合併後供判讀使用
+const facts=()=>Object.assign({},F,DER);
+function derive(){ try{ DER=C.derive?C.derive(F):{}; }catch(e){ DER={}; } }
 
 /* ---------- 引用 ---------- */
 const refOK=id=>!!(REFS[id]&&REFS[id].verified);
@@ -290,6 +304,7 @@ function auditAll(){
     (c.redflags||[]).forEach((r,i)=>add(`${c.name}／紅旗 ${i+1}`,r.refs));
     (c.dx||[]).forEach(d=>{
       if(d.common) add(`${c.name}／${d.name}／常見度`,[d.common.ref]);
+      if(d.dispo) add(`${c.name}／${d.name}／動向`,d.dispo.refs);
       (d.ask||[]).forEach(a=>add(`${c.name}／${d.name}／追問`,a.refs));
       (d.tests||[]).forEach(t=>add(`${c.name}／${d.name}／${t.t}`,t.refs));
     });
@@ -298,7 +313,7 @@ function auditAll(){
 }
 
 /* ---------- 判讀 ---------- */
-const val=id=>(id in F)?F[id]:null;
+const val=id=>(id in F)?F[id]:((id in DER)&&DER[id]!==undefined?DER[id]:null);
 function testRule(r){
   const v=val(r.f);
   if(v===null||v===undefined) return 'missing';
@@ -317,22 +332,24 @@ function evalDx(d){
   (d.against||[]).forEach(r=>{if(testRule(r)==='hit')against.push(r.s);});
   return {support,missing,against,decisive,strong};
 }
-const visible=d=>{try{return !d.showIf||d.showIf(F);}catch(e){return true;}};
+const visible=d=>{try{return !d.showIf||d.showIf(facts());}catch(e){return true;}};
+const primary=d=>val('site')!==null&&!!d.primary&&d.primary.includes(val('site'));
 const regionOK=d=>!d.regions||val('site')===null||d.regions.includes(val('site'));
 function buckets(){
   const all=(C.dx||[]).filter(visible).map(d=>({d,e:evalDx(d)}));
+  // primary：該位置應優先排除之診斷（如右下腹痛之闌尾炎），在各組一律排第一
   const fit=all.filter(x=>(x.e.strong>=2||x.e.decisive)&&!x.e.against.length)
-               .sort((a,b)=>(b.e.decisive-a.e.decisive)||(b.e.support.length-a.e.support.length));
+               .sort((a,b)=>(primary(b.d)-primary(a.d))||(b.e.decisive-a.e.decisive)||(b.e.support.length-a.e.support.length));
   fit.forEach(x=>x.kind='fit');
   const A=[...fit];
   // 資料不足時以「最常見」補位，且常見度本身須有已查證之出處
-  // 排序：已有資料支持者 → 與所選位置明確相符者 → 全體盛行率
+  // 排序：位置優先排除者 → 已有資料支持者 → 與所選位置明確相符者 → 全體盛行率
   const site=val('site'), explicit=d=>site!==null&&!!d.regions&&d.regions.includes(site);
   all.filter(x=>x.d.common&&refOK(x.d.common.ref)&&!x.e.against.length&&regionOK(x.d)&&!A.includes(x))
-     .sort((a,b)=>(b.e.support.length-a.e.support.length)||(explicit(b.d)-explicit(a.d))||(a.d.common.rank-b.d.common.rank))
+     .sort((a,b)=>(primary(b.d)-primary(a.d))||(b.e.support.length-a.e.support.length)||(explicit(b.d)-explicit(a.d))||(a.d.common.rank-b.d.common.rank))
      .forEach(x=>{ if(A.length<3){ A.push({...x,kind:'common'}); } });
   const B=all.filter(x=>x.d.danger)
-             .sort((a,b)=>(b.e.decisive-a.e.decisive)||(b.e.support.length-a.e.support.length));
+             .sort((a,b)=>(primary(b.d)-primary(a.d))||(b.e.decisive-a.e.decisive)||(b.e.support.length-a.e.support.length));
   const inA=new Set(A.map(x=>x.d.id));
   const Cc=all.filter(x=>!x.d.danger&&!inA.has(x.d.id))
               .sort((a,b)=>(regionOK(b.d)-regionOK(a.d))||(b.e.support.length-a.e.support.length));
@@ -342,7 +359,7 @@ function buckets(){
 /* ---------- 欄位 ---------- */
 function fieldsOf(c){const o=[];(c.groups||[]).forEach(g=>g.fields.forEach(f=>o.push([g,f])));return o;}
 function isCore(g){return g.core||(CORE[KEY]||[]).some(p=>g.g.startsWith(p));}
-function shown(f){try{return !f.showIf||f.showIf(F);}catch(e){return true;}}
+function shown(f){try{return !f.showIf||f.showIf(facts());}catch(e){return true;}}
 
 function inputHTML(f,compact){
   const v=val(f.id);
@@ -366,7 +383,7 @@ function inputHTML(f,compact){
 function groupHTML(g){
   const fs=g.fields.filter(f=>!STRIP.includes(f.id)&&shown(f));
   if(!fs.length) return '';
-  let gated=false; try{gated=g.gate?!g.gate(F):false;}catch(e){}
+  let gated=false; try{gated=g.gate?!g.gate(facts()):false;}catch(e){}
   return `<div class="grp ${gated?'gated':''}"><h3>${g.g}${gated?'<small>需先符合適用前提</small>':''}</h3>${
     fs.map(f=>{
       if(f.type==='grid') return `<p class="muted" style="margin:0 0 6px">${f.label}</p><div class="grid9">${
@@ -379,6 +396,10 @@ function renderInputs(){
   // 病人列
   $('strip').innerHTML=STRIP.map(id=>all.find(([g,f])=>f.id===id)).filter(Boolean).filter(([g,f])=>shown(f))
     .map(([g,f])=>`<label>${f.label}${f.unit?` <span style="opacity:.7">${f.unit}</span>`:''}${inputHTML(f,true)}</label>`).join('');
+  // 計算值：缺任一所需數值即不計算，並明示缺什麼
+  const sh=(C.shows||[]).map(s=>{let txt;try{txt=s.fmt(DER[s.k]===undefined?null:DER[s.k],DER);}catch(e){txt='—';}
+    return `<span>${s.label}：<b>${esc(txt)}</b></span>`;}).join('');
+  $('derived').innerHTML=sh; $('derived').hidden=!sh;
   const core=C.groups.filter(isCore), more=C.groups.filter(g=>!isCore(g));
   $('core').innerHTML=core.map(groupHTML).join('');
   $('more').innerHTML=more.map(groupHTML).join('')||'<p class="muted">無其他欄位。</p>';
@@ -400,7 +421,7 @@ function renderInputs(){
 
 /* ---------- 警示 ---------- */
 function renderAlerts(){
-  const hits=(C.redflags||[]).filter(r=>{try{return r.if(F);}catch(e){return false;}});
+  const hits=(C.redflags||[]).filter(r=>{try{return r.if(facts());}catch(e){return false;}});
   const ok=hits.filter(r=>refsOK(r.refs)), blocked=hits.length-ok.length;
   if(!ok.length){
     $('alerts').innerHTML=`<div class="alert calm"><strong>先看病人，再看流程。</strong> 目前未觸發警示，不代表安全；請持續再評估。${
@@ -414,6 +435,24 @@ function renderAlerts(){
 }
 
 /* ---------- 三組 ---------- */
+/* 動向：僅在引用已查證時顯示 */
+function dispoKind(d){
+  const p=d.dispo; if(!p||!refsOK(p.refs)) return null;
+  const a=(p.admit||[]).length, h=(p.home||[]).length;
+  if(a&&h) return ['cond','依條件分流'];
+  if(a) return ['adm','建議住院／處置'];
+  if(h) return ['home','可評估返家'];
+  return null;
+}
+function dispoHTML(d){
+  const p=d.dispo;
+  if(!p) return '<p class="muted">目前沒有已查證之動向依據，請依院內規範與臨床判斷。</p>';
+  if(!refsOK(p.refs)) return '<p class="muted">動向依據尚未查證。</p>';
+  const sec=(cls,title,arr)=>arr&&arr.length?`<div class="dsec ${cls}"><h3>${title}</h3><ul>${arr.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:'';
+  return sec('adm','住院、留觀或緊急處置',p.admit)+sec('home','可評估返家，安排門診追蹤',p.home)
+    +sec('cond','需調整處置的條件',p.caution)+`<div style="margin-top:8px">${whyBtn(p.refs)}</div>`
+    +'<p class="muted" style="margin-top:10px">動向最終由主治醫師依病人整體狀況、共病、社會支持與院內資源決定。返家者須給予返診警訊衛教。</p>';
+}
 function card(x,bucket){
   const {d,e}=x, t=TAG[d.id];
   const pills=[];
@@ -421,6 +460,7 @@ function card(x,bucket){
   if(bucket===1&&x.kind==='common') pills.push('<span class="pill common">常見</span>');
   if(bucket!==2&&d.danger) pills.push('<span class="pill" style="color:var(--red)">危險</span>');
   if(t) pills.push(`<span class="pill tag">${({keep:'持續考慮',less:'暫不支持',more:'需補資料'})[t]}</span>`);
+  const dk=dispoKind(d); if(dk) pills.push(`<span class="pill ${dk[0]}">${dk[1]}</span>`);
   const sub = bucket===1&&x.kind==='common'
       ? `${d.common.note}（尚待資料支持）`
       : (e.support.length? '支持：'+e.support.slice(0,2).join('、') : (e.missing.length?'尚缺：'+e.missing.slice(0,2).join('、'):''));
@@ -458,7 +498,7 @@ function renderDrawer(){
   if(!OPEN) return;
   const d=C.dx.find(x=>x.id===OPEN); if(!d){closeDrawer();return;}
   const e=evalDx(d), t=TAG[d.id]||'';
-  const tabs=[['why','為什麼考慮'],['ask','還要問什麼'],['test','檢查'],['re','結果回來後']];
+  const tabs=[['why','為什麼考慮'],['ask','還要問什麼'],['test','檢查'],['re','結果回來後'],['dispo','動向']];
   let body='';
   if(DTAB==='why'){
     body=`<p style="margin-top:0">${d.why}</p>`
@@ -476,6 +516,8 @@ function renderDrawer(){
     body=(ok.map(x=>`<div class="item"><b>${x.t}<span class="yield y-${x.yield||'mid'}">${Y[x.yield||'mid']}</span></b>
       <p>目的：${x.purpose}</p>${x.note?`<p>${x.note}</p>`:''}${x.caveat?`<p class="cav">注意：${x.caveat}</p>`:''}${whyBtn(x.refs)}</div>`).join('')
       ||'<p class="muted">無已查證之檢查項目。</p>')+(nb?`<p class="muted">另有 ${nb} 項因引用未查證而封鎖。</p>`:'');
+  }else if(DTAB==='dispo'){
+    body=dispoHTML(d);
   }else{
     body=`<p style="margin-top:0">${d.reassess||'—'}</p>`;
   }
@@ -514,7 +556,7 @@ function renderInteg(){
 
 /* ---------- 主流程 ---------- */
 function update(focusId){
-  renderInputs(); renderAlerts(); renderBuckets(); if(OPEN) renderDrawer();
+  derive(); renderInputs(); renderAlerts(); renderBuckets(); if(OPEN) renderDrawer();
   if(focusId){const el=document.querySelector(`[data-f="${focusId}"]`);
     if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}}}
 }
@@ -530,7 +572,7 @@ function load(key){
   if(location.hash!=='#'+key) history.replaceState(null,'','#'+key);
   update(); window.scrollTo({top:0});
 }
-$('tabs').innerHTML=Object.entries(COMPLAINTS).map(([k,c])=>`<button role="tab" data-k="${k}">${c.name}</button>`).join('');
+$('tabs').innerHTML=Object.entries(COMPLAINTS).map(([k,c])=>`<button role="tab" data-k="${k}">${SHORT[k]||c.name}</button>`).join('');
 $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>load(b.dataset.k));
 $('reset').onclick=()=>load(KEY);
 $('scrim').onclick=closeDrawer;
