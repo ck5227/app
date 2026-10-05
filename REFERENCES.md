@@ -152,3 +152,35 @@ EXTRIP 系列中**最新的一份改版**（前一版為 2015）。分析 226 �
 
 > ⚠️ 本專案為教學與決策輔助用途，不取代臨床判斷。所有劑量以院內藥典與毒物中心為準。
 > 內容由臨床醫師負責核對，程式作者不對臨床結果負責。
+
+---
+
+# 急診主訴鑑別參考（ddx.html、dizzy.html）
+
+**最後查證：2026-10-06**　完整引用內容與每條主張的對應，見 `ddx-data.js` 之 `REFS`；
+頁面首頁的「引用完整性」面板可當場稽核每一條主張。
+
+| 代號 | 來源 | 等級 |
+|---|---|---|
+| GRACE3 | Edlow JA et al. GRACE-3: Acute dizziness and vertigo in the ED. *Acad Emerg Med* 2023;30(5):442–486 | GRADE 指引（SAEM），15 條建議 |
+| LEE2025NYS | Lee SU, Tarnutzer AA. Usefulness of nystagmus patterns… *J Clin Neurol* 2025;21(3):161–172 | 批判性回顧 |
+| AAOHNS2017 | Bhattacharyya N et al. CPG: BPPV (Update). *Otolaryngol Head Neck Surg* 2017;156(3 Suppl):S1–S47 | 學會臨床實務指引 |
+| KATTAH2009 | Kattah JC et al. HINTS to diagnose stroke in AVS. *Stroke* 2009;40:3504–3510 | 原始前瞻性研究 |
+| PLOS2022HINTS | HINTS and STANDING in AVS: SR/MA, frontline EPs. *PLoS ONE* 2022 | 系統性回顧與統合分析 |
+| AFP2023ABD | Yew KS et al. Acute Abdominal Pain in Adults. *Am Fam Physician* 2023;107(6):585–596 | 同儕審閱綜論 |
+| TSEM2018FEVER | 陳世英。急診成人感染病人之鑑別思路。台灣急診醫學通訊 2018;1(6):e2018010608 | 學會刊物專家綜論 |
+| TINT9 | Tintinalli's Emergency Medicine, 9th ed., 2020 | 教科書，僅作章節索引 |
+
+## 刻意未採用的來源
+
+- **NICE CKS「Vertigo」**：頁面載明為第三方（Agilio Software）內容、非 NICE 內容、不適用 NICE
+  開放授權，且僅限英國境內存取。NICE 本身沒有眩暈之正式指引（NG）。因此本系統不以 NICE 作為頭暈之依據。
+- **第三方網站自稱之「NICE 摘要」**（如 iatrox）：非官方來源，不採用。
+- **台灣急診醫學通訊 2018 文中之 EGDT 建議**：已於 ProCESS、ARISE、ProMISe 試驗後不再建議，不引用。
+- **Tintinalli 內文**：提供之 PDF 僅含前置頁與目錄，未含章節內文；有版權，僅引用章節位置。
+
+## 目前封鎖中的主張（22 條）
+
+依治理規則，引用未查證者一律不顯示。主要缺口：椎動脈剝離、暈厥前兆評估（建議 ESC 2018 暈厥指引）、
+腰椎穿刺時機（建議 IDSA 或 ESCMID 腦膜炎指引）、瘧疾檢驗（建議 CDC 或 WHO 指引）、
+上腹痛之心電圖、壞死性筋膜炎之外科會診時機、院內影像與檢傷流程。

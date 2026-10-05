@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>急診頭暈流程</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#09121A; --panel:#0F1F2C; --panel-2:#16303F; --line:#254753;
+  --text:#DEEAEF; --muted:#85A1AD;
+  --sodium:#F0A83C; --trace:#57D9A3; --alarm:#EE6A58; --cool:#6FB3DE;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ink:#E6ECEF; --panel:#FFFFFF; --panel-2:#EFF4F7; --line:#C6D5DC;
+    --text:#0E1D26; --muted:#557282;
+    --sodium:#A5620B; --trace:#17754F; --alarm:#B23325; --cool:#2A6795;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--ink);color:var(--text);
+  font-family:"Noto Sans TC",system-ui,-apple-system,sans-serif;line-height:1.6}
+.wrap{max-width:860px;margin:0 auto;padding:22px 16px 70px}
+h1{font-size:1.4rem;margin:0 0 4px}
+.sub{color:var(--muted);font-size:.88rem;margin:0 0 16px}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--sodium);outline-offset:2px}
+
+/* 永遠可見的三條重點 */
+.pearls{display:grid;gap:8px;grid-template-columns:1fr;margin-bottom:16px}
+@media(min-width:700px){.pearls{grid-template-columns:repeat(3,1fr)}}
+.pearl{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--alarm);
+  border-radius:10px;padding:11px 13px;font-size:.86rem}
+.pearl b{display:block;font-size:.92rem;margin-bottom:3px}
+.pearl .why{margin-top:6px}
+
+/* 路徑 */
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.crumb{font-size:.78rem;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;
+  padding:3px 11px;color:var(--muted)}
+.node{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--cool);
+  border-radius:12px;padding:18px}
+.node.central{border-left-color:var(--alarm)}
+.node.peripheral{border-left-color:var(--trace)}
+.node.info{border-left-color:var(--sodium)}
+.step{font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--muted);letter-spacing:.06em}
+.node h2{font-size:1.12rem;margin:3px 0 8px}
+.node .det{font-size:.9rem;color:var(--muted);margin:0 0 10px}
+.acts{list-style:none;padding:0;margin:8px 0 4px}
+.acts li{padding:7px 0;border-top:1px solid var(--line);font-size:.92rem}
+.acts li:first-child{border-top:0}
+.grade{display:inline-block;font-size:.7rem;border-radius:999px;padding:1px 8px;margin-left:6px;
+  font-family:"IBM Plex Mono",monospace;white-space:nowrap;vertical-align:1px}
+.g-strong{background:color-mix(in srgb,var(--trace) 22%,transparent);color:var(--trace)}
+.g-against{background:color-mix(in srgb,var(--alarm) 20%,transparent);color:var(--alarm)}
+.g-cond{background:color-mix(in srgb,var(--cool) 22%,transparent);color:var(--cool)}
+.g-gps{background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)}
+.g-data{background:color-mix(in srgb,var(--sodium) 20%,transparent);color:var(--sodium)}
+.opts{display:grid;gap:8px;margin-top:14px}
+.opt{text-align:left;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+  border-radius:9px;padding:11px 14px;font-size:.95rem;transition:.12s}
+.opt:hover{border-color:var(--cool);transform:translateX(2px)}
+.opt small{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
+.why{background:transparent;border:1px solid var(--line);color:var(--sodium);border-radius:6px;
+  padding:1px 9px;font-size:.74rem;margin-left:6px}
+.src{border-left:2px solid var(--sodium);padding:6px 0 6px 11px;margin:7px 0 2px;font-size:.8rem}
+.src .meta{color:var(--muted);font-size:.76rem}
+.src a{color:var(--cool)}
+.locked{border-left:2px solid var(--alarm);padding:6px 0 6px 11px;margin-top:7px;font-size:.8rem;color:var(--alarm)}
+.bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 15px;font-size:.88rem}
+.foot{margin-top:22px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+.foot a{color:var(--cool)}
+
+/* 全圖 */
+.tree{margin-top:14px;font-size:.88rem}
+.tree details{border-left:2px solid var(--line);padding-left:12px;margin:6px 0 6px 4px}
+.tree summary{cursor:pointer;padding:3px 0}
+.tree .leaf{padding:3px 0 3px 16px;color:var(--muted)}
+.tree .c{color:var(--alarm)} .tree .p{color:var(--trace)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>急診頭暈：中樞或周邊</h1>
+<p class="sub">重點在神經學檢查與眼振型態。逐題回答，或展開全圖一次看完。
+   每一步都可點「依據」看到指引原文出處與建議強度。</p>
+
+<div class="pearls" id="pearls"></div>
+
+<div class="crumbs" id="crumbs"></div>
+<div id="stage"></div>
+
+<div class="bar">
+  <button class="ghost" id="back">← 上一步</button>
+  <button class="ghost" id="restart">重新開始</button>
+  <button class="ghost" id="treebtn">展開全圖</button>
+</div>
+<div class="tree" id="tree" hidden></div>
+
+<p class="foot">建議強度標示依 GRACE-3（SAEM 2023，GRADE 方法學）：
+  <span class="grade g-strong">強建議</span>
+  <span class="grade g-against">強烈反對</span>
+  <span class="grade g-cond">條件式</span>
+  <span class="grade g-gps">良好實務</span>
+  <span class="grade g-data">研究數據</span><br>
+  引用只能取自已人工查證之引用庫，最後查證 <span id="rv"></span>。
+  教學與臨床參考用途，不取代臨床判斷。
+  <a href="ddx.html">完整鑑別參考</a>　·　<a href="./">回首頁</a></p>
+</div>
+
+<script src="ddx-data.js?v=20261006b"></script>
+<script>
+const $=id=>document.getElementById(id);
+const refsOK=ids=>ids&&ids.length&&ids.every(i=>REFS[i]&&REFS[i].verified);
+const G={S:['g-strong','強建議'],A:['g-against','強烈反對'],C:['g-cond','條件式'],
+         CA:['g-against','條件式反對'],P:['g-gps','良好實務'],D:['g-data','研究數據']};
+const g=k=>k?`<span class="grade ${G[k][0]}">${G[k][1]}</span>`:'';
+
+/* 每一個動作：[文字, 強度代碼, 引用] */
+const PEARLS=[
+  ['垂直或扭轉型眼振：看到就抓中樞','休息時出現，對中樞病因特異度 97.7%；但敏感度只有 19.1%，沒看到不能排除。',['LEE2025NYS']],
+  ['電腦斷層不能排除後循環中風','不應以非顯影 CT 或 CTA 區分中樞與周邊（強烈反對、高確定性）。',['GRACE3']],
+  ['HINTS 只用在「持續性眩暈＋有眼振」','須由受過訓練者執行；沒有眼振時 HINTS 不適用。',['GRACE3','HINTSCAVEAT']],
+];
+
+const N={
+  neuro:{step:'步驟 1',kind:'q',t:'神經學檢查有無異常？',
+    det:'先做這一步，不論頭暈型態。著重腦神經、眼動、協調與步態。',
+    acts:[['複視、構音障礙、吞嚥困難、辨距不良','P',['GRACE3']],
+          ['臉部或肢體無力、麻木','P',['GRACE3']],
+          ['能否獨立站立、行走（評估步態嚴重度）','C',['GRACE3']]],
+    opts:[['有任一項異常','central_mri'],['全部正常','timing']]},
+  timing:{step:'步驟 2',kind:'q',t:'依「時序與誘發」分型',
+    det:'以發作型態分流，而不是病人用什麼詞形容頭暈。',
+    acts:[['分流依據為時序與誘發因素，而非症狀描述','P',['GRACE3']]],
+    opts:[['持續性：現在仍在暈，持續數小時到數天','nys','急性前庭症候群'],
+          ['誘發陣發：只在特定頭位改變時發作','dix','誘發陣發型'],
+          ['自發陣發：無誘因地反覆發作，現在已緩解','sevs','自發陣發型']]},
+  nys:{step:'步驟 3',kind:'q',t:'休息、正視前方時，有沒有自發性眼振？',
+    det:'這一步決定後面能不能用 HINTS。觀察時不要誘發，先看休息狀態。',
+    acts:[],
+    opts:[['有眼振','nystype'],['沒有眼振','no_nys']]},
+  no_nys:{step:'結果',kind:'central',t:'持續性眩暈卻沒有自發性眼振：偏向中樞',
+    det:'這個組合本身就是警訊，不是「比較輕微」。',
+    acts:[['急性前庭症候群無自發性眼振，對中樞病因特異度 97.9%','D',['LEE2025NYS']],
+          ['HINTS 不適用；改以步態嚴重度區分中樞與周邊','C',['GRACE3']],
+          ['步態中重度不穩或結果不明確 → 含 DWI 之中風 MRI 與 MRA','S',['GRACE3']]],
+    opts:[]},
+  nystype:{step:'步驟 4',kind:'q',t:'眼振是什麼型態？',
+    det:'與 Dix-Hallpike「誘發」出的扭轉上跳型不同：這裡問的是休息時的自發性眼振。',
+    acts:[],
+    opts:[['垂直（上跳或下跳）或純扭轉型','central_vert'],
+          ['凝視不同方向時，眼振方向改變','central_dir'],
+          ['水平、單一方向（往同一側跳）','hints']]},
+  central_vert:{step:'結果',kind:'central',t:'垂直或扭轉型自發性眼振：視為中樞',
+    det:'這是高特異度的中樞徵象，看到就不必等 HINTS 其他兩項。',
+    acts:[['對中樞病因特異度 97.7%（敏感度 19.1%，屬「抓中樞」而非「排除中樞」的徵象）','D',['LEE2025NYS']],
+          ['安排含 DWI 之中風 MRI 與 MRA','S',['GRACE3']],
+          ['不以 CT 排除後循環中風','A',['GRACE3']]],
+    opts:[]},
+  central_dir:{step:'結果',kind:'central',t:'方向改變之眼振：HINTS 中樞警訊',
+    det:'HINTS 任一項不符合周邊型，就不能排除中樞。',
+    acts:[['凝視時方向改變之眼振屬 HINTS 中樞發現','D',['KATTAH2009','HINTSCAVEAT']],
+          ['安排含 DWI 之中風 MRI 與 MRA','S',['GRACE3']],
+          ['不以 CT 排除後循環中風','A',['GRACE3']]],
+    opts:[]},
+  hints:{step:'步驟 5',kind:'q',t:'完成 HINTS ＋ 床邊聽力',
+    det:'水平單向眼振是周邊型的典型，但仍要做完其餘兩項才能下結論。',
+    acts:[['由受過訓練者執行 HINTS','S',['GRACE3']],
+          ['頭部甩動試驗：有矯正性掃視＝周邊型；正常（無掃視）＝中樞警訊','D',['KATTAH2009']],
+          ['交替遮眼看垂直眼位偏斜：有偏斜＝中樞警訊','D',['KATTAH2009']],
+          ['手指摩擦測聽力：新發單側聽力喪失＝提高中樞警覺','C',['GRACE3']],
+          ['專家執行時敏感度 100%、特異度 96%；統合分析合併敏感度 0.96、特異度 0.88','D',['KATTAH2009','PLOS2022HINTS']]],
+    opts:[['任一項中樞警訊，或結果不確定','central_hints'],
+          ['三項皆周邊型、聽力無新變化、可獨立行走','vn']]},
+  central_hints:{step:'結果',kind:'central',t:'HINTS 指向中樞或結果不明確',
+    det:'',
+    acts:[['安排含 DWI 之中風 MRI 與 MRA','S',['GRACE3']],
+          ['發病 24–48 小時內之 MRI-DWI 可能偽陰性；床邊 HINTS 於此時間窗內敏感度較高','D',['KATTAH2009']],
+          ['不以 CT 排除後循環中風','A',['GRACE3']]],
+    opts:[]},
+  vn:{step:'結果',kind:'peripheral',t:'符合周邊病因（如前庭神經炎）',
+    det:'前提是 HINTS 由受過訓練者執行，且三項全部是周邊型。',
+    acts:[['受過訓練者可做 HINTS 時，不常規先安排 MRI','A',['GRACE3']],
+          ['發病 3 天內之前庭神經炎，可共同決策是否使用短期類固醇（極低確定性）','C',['GRACE3']]],
+    opts:[]},
+  dix:{step:'步驟 3',kind:'q',t:'做 Dix-Hallpike',
+    det:'誘發陣發型應常規施行。',
+    acts:[['常規以 Dix-Hallpike 診斷誘發陣發型','S',['GRACE3']],
+          ['不常規做 CT 或 CTA','A',['GRACE3']]],
+    opts:[['誘發出伴隨眩暈之扭轉、上跳型眼振（典型）','bppv'],
+          ['陰性，或誘發出的眼振不典型','dix_atyp']]},
+  bppv:{step:'結果',kind:'peripheral',t:'後半規管 BPPV',
+    det:'注意：這裡的扭轉上跳是「誘發」的，與休息時的自發性垂直眼振意義相反。',
+    acts:[['Dix-Hallpike 誘發典型扭轉、上跳型眼振即可診斷','S',['AAOHNS2017']],
+          ['立即施行 Epley 復位術','S',['GRACE3']],
+          ['典型者不常規安排 MRI','CA',['GRACE3']],
+          ['不常規使用抗組織胺或苯二氮平類等前庭抑制劑','A',['AAOHNS2017']]],
+    opts:[]},
+  dix_atyp:{step:'結果',kind:'info',t:'不典型：重新評估',
+    det:'不要因為「頭位會誘發」就停在 BPPV。',
+    acts:[['症狀持續者應評估未緩解之 BPPV 或其他周邊、中樞疾病','P',['AAOHNS2017']],
+          ['回到步驟 1 重新做神經學檢查與步態','P',['GRACE3']]],
+    opts:[['回到步驟 1','neuro']]},
+  sevs:{step:'步驟 3',kind:'info',t:'自發陣發型：重點在病史與神經學檢查',
+    det:'病人來時多已不暈，床邊檢查可能完全正常，不能因此放心。',
+    acts:[['詳細病史與理學檢查，著重腦神經、眼動、協調與步態','P',['GRACE3']],
+          ['不常規做 CT','A',['GRACE3']],
+          ['懷疑 TIA 時，以 CTA 或 MRA 排除後循環血管病變','C',['GRACE3']]],
+    opts:[]},
+  central_mri:{step:'結果',kind:'central',t:'神經學異常：依中樞病因處置',
+    det:'頭暈合併任何神經學異常，不需要等 HINTS。',
+    acts:[['安排含 DWI 之中風 MRI 與 MRA','S',['GRACE3']],
+          ['不以 CT 或 CTA 區分中樞與周邊','A',['GRACE3']]],
+    opts:[]}
+};
+
+let path=['neuro'];
+
+function srcHTML(ids){
+  return ids.map(id=>{
+    const r=REFS[id];
+    if(!r||!r.verified) return `<div class="locked">引用 ${id} 尚未通過人工查證，已封鎖。</div>`;
+    return `<div class="src"><b>${r.t}</b><div class="meta">${r.src}　${r.yr||''}　${r.sec||''}　·　${r.strength}　·　查證 ${r.verified}</div>
+      <div style="margin-top:3px">${r.key}</div>
+      ${r.limit?`<div class="meta" style="margin-top:3px">適用限制：${r.limit}</div>`:''}
+      ${r.url?`<div class="meta"><a href="${r.url}" target="_blank" rel="noopener">原始連結</a></div>`:''}</div>`;
+  }).join('');
+}
+function whyBtn(ids){ return `<button class="why" data-refs="${ids.join(',')}">依據</button>`; }
+function bindWhy(root){
+  root.querySelectorAll('.why').forEach(b=>b.onclick=()=>{
+    const nx=b.nextElementSibling;
+    if(nx&&nx.classList.contains('srcbox')){nx.remove();return;}
+    const d=document.createElement('div');d.className='srcbox';
+    d.innerHTML=srcHTML(b.dataset.refs.split(','));
+    b.after(d);
+  });
+}
+function actLI(a){
+  if(!refsOK(a[2])) return `<li><span class="locked">此項依據尚未查證，已封鎖</span></li>`;
+  return `<li>${a[0]}${g(a[1])}${whyBtn(a[2])}</li>`;
+}
+
+function render(){
+  const id=path[path.length-1], n=N[id];
+  $('crumbs').innerHTML=path.map(p=>`<span class="crumb">${N[p].step}：${N[p].t.replace(/[？?]$/,'').slice(0,14)}</span>`).join('');
+  $('stage').innerHTML=`<div class="node ${n.kind}">
+    <div class="step">${n.step}</div><h2>${n.t}</h2>
+    ${n.det?`<p class="det">${n.det}</p>`:''}
+    ${n.acts.length?`<ul class="acts">${n.acts.map(actLI).join('')}</ul>`:''}
+    ${n.opts.length?`<div class="opts">${n.opts.map((o,i)=>
+      `<button class="opt" data-go="${o[1]}">${o[0]}${o[2]?`<small>${o[2]}</small>`:''}</button>`).join('')}</div>`:''}
+  </div>`;
+  $('stage').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
+    const t=b.dataset.go;
+    if(t==='neuro') path=['neuro']; else path.push(t);
+    render();
+  });
+  bindWhy($('stage'));
+  $('back').disabled=path.length<2;
+}
+
+function tree(id,seen){
+  const n=N[id]; seen=seen||new Set();
+  if(seen.has(id)) return `<div class="leaf">↺ ${n.t}</div>`;
+  seen=new Set(seen); seen.add(id);
+  const cls=n.kind==='central'?'c':n.kind==='peripheral'?'p':'';
+  if(!n.opts.length) return `<div class="leaf ${cls}">● ${n.t}</div>`;
+  return `<details open><summary><b>${n.step}</b>　${n.t}</summary>`
+    +n.opts.map(o=>`<div class="leaf">↳ ${o[0]}</div>${tree(o[1],seen)}`).join('')+`</details>`;
+}
+
+$('pearls').innerHTML=PEARLS.map(p=>refsOK(p[2])
+  ?`<div class="pearl"><b>${p[0]}</b>${p[1]}<div>${whyBtn(p[2])}</div></div>`
+  :`<div class="pearl"><span class="locked">依據未查證，已封鎖</span></div>`).join('');
+bindWhy($('pearls'));
+$('rv').textContent=EVIDENCE_REVIEWED;
+$('back').onclick=()=>{if(path.length>1){path.pop();render();}};
+$('restart').onclick=()=>{path=['neuro'];render();};
+$('treebtn').onclick=()=>{
+  const t=$('tree');
+  if(t.hidden){t.innerHTML=tree('neuro');t.hidden=false;$('treebtn').textContent='收合全圖';}
+  else{t.hidden=true;$('treebtn').textContent='展開全圖';}
+};
+render();
+</script>
+</body>
+</html>

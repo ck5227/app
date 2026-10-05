@@ -206,7 +206,7 @@ select{max-width:100%}
 
 </div>
 
-<script src="ddx-data.js"></script>
+<script src="ddx-data.js?v=20261006b"></script>
 <script>
 const $=id=>document.getElementById(id);
 let C=null, F={}, TAG={}, OPEN=null, DTAB='why';
@@ -273,19 +273,21 @@ function testRule(r){
 }
 function evalDx(d){
   const support=[], missing=[], against=[];
+  let decisive=false;
   (d.rules||[]).forEach(r=>{
     const t=testRule(r);
-    if(t==='hit') support.push(r.s);
+    if(t==='hit'){ support.push(r.s); if(r.decisive) decisive=true; }
     else if(t==='missing') missing.push(r.s);
   });
   (d.against||[]).forEach(r=>{ if(testRule(r)==='hit') against.push(r.s); });
-  return {support,missing,against};
+  return {support,missing,against,decisive};
 }
 function buckets(){
   const A=[],B=[],Cc=[];
   (C.dx||[]).forEach(d=>{
     const e=evalDx(d);
-    const fit = e.support.length>=2 && e.against.length===0;
+    // 一般需 2 項支持；高特異度徵象（decisive）單項即足以列為最符合
+    const fit = (e.support.length>=2 || e.decisive) && e.against.length===0;
     if(fit) A.push({d,e});
     if(d.danger) B.push({d,e});
     if(!fit && !d.danger) Cc.push({d,e});
