@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>學習歷程代碼彙整</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#09121A; --panel:#0F1F2C; --panel-2:#16303F; --line:#254753;
+  --text:#DEEAEF; --muted:#85A1AD;
+  --sodium:#F0A83C; --trace:#57D9A3; --alarm:#EE6A58; --cool:#6FB3DE;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ink:#E6ECEF; --panel:#FFFFFF; --panel-2:#EFF4F7; --line:#C6D5DC;
+    --text:#0E1D26; --muted:#557282;
+    --sodium:#A5620B; --trace:#17754F; --alarm:#B23325; --cool:#2A6795;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--ink);color:var(--text);
+  font-family:"Noto Sans TC",system-ui,-apple-system,sans-serif;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 16px 80px}
+h1{font-size:1.5rem;margin:0 0 6px}
+h2{font-size:1rem;margin:0 0 10px}
+.sub{color:var(--muted);font-size:.9rem;margin:0 0 24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card+.card{margin-top:14px}
+.note{font-size:.85rem;color:var(--muted)}
+textarea{width:100%;min-height:150px;background:var(--panel-2);color:var(--text);
+  border:1px solid var(--line);border-radius:8px;padding:12px;
+  font-family:"IBM Plex Mono",monospace;font-size:.9rem;line-height:1.7;resize:vertical}
+button{font-family:inherit;font-size:.95rem;cursor:pointer;border:0;border-radius:8px;
+  padding:10px 20px;font-weight:700;background:var(--sodium);color:#09121A;margin-top:12px}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line);font-weight:500;
+  margin-left:8px}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.86rem}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:.78rem;letter-spacing:.03em}
+td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.ok{color:var(--trace)} .bad{color:var(--alarm)} .warn{color:var(--sodium)}
+.scroll{overflow-x:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:4px}
+.stat{background:var(--panel-2);border-radius:9px;padding:12px 14px}
+.stat span{display:block;font-size:.76rem;color:var(--muted)}
+.stat b{font-family:"IBM Plex Mono",monospace;font-size:1.45rem;font-weight:600;color:var(--sodium)}
+.stat small{font-size:.74rem;color:var(--muted)}
+.err{background:color-mix(in srgb,var(--alarm) 14%,transparent);
+  border:1px solid var(--alarm);border-radius:8px;padding:10px 13px;margin-top:12px;font-size:.86rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>學習歷程代碼彙整</h1>
+<p class="sub">把學員回填的代碼整批貼進來，產生個別表現與全班統計，可匯出 CSV 作課程成效分析。
+   本頁純前端運算，資料不離開這台電腦。</p>
+
+<div class="card">
+  <h2>貼上代碼（一行一筆）</h2>
+  <textarea id="inp" placeholder="NS1-M-2B-F-1-33-33-0-0-1-PGY07-4K
+NS1-A-1X-C-1-23-22-8-1-1-PGY12-9A
+..."></textarea>
+  <button id="run">解析</button>
+  <button class="ghost" id="demo">載入示範資料</button>
+  <button class="ghost" id="csv">匯出 CSV</button>
+  <div id="errs"></div>
+</div>
+
+<div class="card" id="statcard" style="display:none">
+  <h2>全班統計</h2>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="card" id="tblcard" style="display:none">
+  <h2>個別紀錄</h2>
+  <div class="scroll"><table id="tbl"></table></div>
+  <p class="note" id="legend"></p>
+</div>
+
+</div>
+
+<script>
+const CASENAME={M:'MALA',O:'甲醇中毒',E:'eDKA',S:'敗血性休克',A:'水楊酸中毒',X:'未知'};
+const d36=s=>parseInt(s,36);
+const $=id=>document.getElementById(id);
+let ROWS=[];
+
+function decode(line){
+  const raw=line.trim();
+  if(!raw)return null;
+  const p=raw.split('-');
+  if(p.length!==12||p[0]!=='NS1')return{raw,error:'格式不符（應為 12 段、NS1 開頭）'};
+  const body=p.slice(0,11).join('-');
+  let h=0;for(const ch of body)h=(h*31+ch.charCodeAt(0))>>>0;
+  const want=(h%1296).toString(36).toUpperCase().padStart(2,'0');
+  if(want!==p[11])return{raw,error:'校驗碼不符，可能是手動修改或抄錯'};
+  return{raw,
+    sid:p[10]==='NA'?'(未填)':p[10],
+    caseKey:p[1], caseName:CASENAME[p[1]]||p[1],
+    t:d36(p[2]), n:d36(p[3]), dx:p[4]==='1',
+    keys:d36(p[5][0]), keysT:d36(p[5][1]),
+    tx:d36(p[6][0]), txT:d36(p[6][1]),
+    wasted:d36(p[7]), harm:p[8]==='1', inTime:p[9]==='1'};
+}
+
+function render(){
+  const lines=$('inp').value.split('\n');
+  const out=lines.map(decode).filter(Boolean);
+  const bad=out.filter(r=>r.error), ok=out.filter(r=>!r.error);
+  ROWS=ok;
+
+  $('errs').innerHTML=bad.length
+    ?`<div class="err"><strong>${bad.length} 筆無法解析：</strong><br>`
+      +bad.map(b=>`${b.raw||'(空白)'} — ${b.error}`).join('<br>')+'</div>'
+    :'';
+
+  if(!ok.length){$('statcard').style.display='none';$('tblcard').style.display='none';return;}
+
+  const n=ok.length, avg=f=>ok.reduce((s,r)=>s+f(r),0)/n, pct=f=>100*ok.filter(f).length/n;
+  const keyRate=100*ok.reduce((s,r)=>s+r.keys,0)/ok.reduce((s,r)=>s+r.keysT,0);
+  const txRate=100*ok.reduce((s,r)=>s+r.tx,0)/ok.reduce((s,r)=>s+r.txT,0);
+  const stats=[
+    ['有效樣本',n,'筆'],
+    ['診斷正確率',pct(r=>r.dx).toFixed(0)+'%',''],
+    ['關鍵資訊取得率',keyRate.toFixed(0)+'%','能釘住診斷的項目'],
+    ['必要處置完成率',txRate.toFixed(0)+'%',''],
+    ['時間窗內完成',pct(r=>r.inTime).toFixed(0)+'%',''],
+    ['低產出耗時',avg(r=>r.wasted).toFixed(1),'分鐘／人（主要指標）'],
+    ['平均總耗時',avg(r=>r.t).toFixed(1),'分鐘'],
+    ['有害處置發生率',pct(r=>r.harm).toFixed(0)+'%','越低越好'],
+  ];
+  $('stats').innerHTML=stats.map(s=>
+    `<div class="stat"><span>${s[0]}</span><b>${s[1]}</b><small>${s[2]}</small></div>`).join('');
+  $('statcard').style.display='';
+
+  const head=['學員代號','案例','總耗時','動作數','診斷','關鍵資訊','必要處置','低產出分鐘','有害處置','時間窗'];
+  let html='<thead><tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  html+=ok.map(r=>`<tr>
+    <td class="num">${r.sid}</td><td>${r.caseName}</td>
+    <td class="num">${r.t}</td><td class="num">${r.n}</td>
+    <td class="${r.dx?'ok':'bad'}">${r.dx?'正確':'錯誤'}</td>
+    <td class="num ${r.keys===r.keysT?'ok':'warn'}">${r.keys}/${r.keysT}</td>
+    <td class="num ${r.tx===r.txT?'ok':'warn'}">${r.tx}/${r.txT}</td>
+    <td class="num ${r.wasted>0?'warn':'ok'}">${r.wasted}</td>
+    <td class="${r.harm?'bad':'ok'}">${r.harm?'有':'無'}</td>
+    <td class="${r.inTime?'ok':'bad'}">${r.inTime?'內':'超時'}</td></tr>`).join('');
+  $('tbl').innerHTML=html+'</tbody>';
+  $('legend').textContent=
+    '「低產出分鐘」指花在不會改變該病人處置之項目的時間，是本課程的主要成效指標；'
+    +'「關鍵資訊」指該案例中唯一能確立診斷的檢查項目。';
+  $('tblcard').style.display='';
+}
+
+$('run').onclick=render;
+$('csv').onclick=()=>{
+  if(!ROWS.length){alert('請先解析資料');return;}
+  const head=['sid','case','total_min','actions','dx_correct','key_hit','key_total',
+              'tx_hit','tx_total','low_yield_min','harm','in_time'];
+  const body=ROWS.map(r=>[r.sid,r.caseName,r.t,r.n,r.dx?1:0,r.keys,r.keysT,
+    r.tx,r.txT,r.wasted,r.harm?1:0,r.inTime?1:0].join(','));
+  // BOM 讓 Excel 正確辨識 UTF-8
+  const blob=new Blob(['﻿'+[head.join(','),...body].join('\n')],
+    {type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='nightshift_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+};
+$('demo').onclick=()=>{
+  // 示範用的假代碼，僅供確認本頁功能，不得作為成效數據
+  const mk=d=>{
+    const b36=n=>Math.max(0,Math.round(n)).toString(36).toUpperCase();
+    const body=['NS1',d.c,b36(d.t),b36(d.n),d.dx?'1':'0',b36(d.k)+b36(d.kt),
+      b36(d.x)+b36(d.xt),b36(d.w),d.h?'1':'0',d.i?'1':'0',d.s].join('-');
+    let h=0;for(const ch of body)h=(h*31+ch.charCodeAt(0))>>>0;
+    return body+'-'+(h%1296).toString(36).toUpperCase().padStart(2,'0');
+  };
+  $('inp').value=[
+    mk({c:'M',t:63,n:11,dx:1,k:3,kt:3,x:3,xt:3,w:0,h:0,i:1,s:'DEMO01'}),
+    mk({c:'A',t:78,n:15,dx:1,k:2,kt:3,x:1,xt:2,w:25,h:1,i:0,s:'DEMO02'}),
+    mk({c:'E',t:55,n:9,dx:0,k:1,kt:2,x:1,xt:2,w:12,h:0,i:1,s:'DEMO03'}),
+  ].join('\n');
+  render();
+};
+</script>
+</body>
+</html>

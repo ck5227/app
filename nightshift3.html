@@ -112,8 +112,15 @@ button:focus-visible{outline:2px solid var(--sodium);outline-offset:2px}
 .chk{display:flex;gap:9px;align-items:flex-start;padding:8px 11px;border-radius:8px;
   background:var(--panel-2);margin-bottom:5px;font-size:.93rem}
 .chk input{margin-top:5px;accent-color:var(--sodium)}
-select{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+select,input.txt{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);
   border-radius:8px;padding:10px;font-family:inherit;font-size:1rem}
+input.txt{max-width:260px;font-family:"IBM Plex Mono",monospace;letter-spacing:.06em}
+.codebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.codebox code{flex:1 1 320px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:8px;padding:11px 13px;font-family:"IBM Plex Mono",monospace;
+  font-size:.95rem;letter-spacing:.05em;word-break:break-all;color:var(--sodium)}
+.copy{background:var(--cool);color:#09121A;border:0;border-radius:8px;padding:11px 18px;font-weight:700}
+.copy.done{background:var(--trace)}
 label.fld{display:block;font-size:.84rem;color:var(--muted);margin:13px 0 6px}
 .verdict{border-left:3px solid var(--line);padding:2px 0 2px 14px;margin:14px 0}
 .verdict.good{border-color:var(--trace)} .verdict.bad{border-color:var(--alarm)}
@@ -139,6 +146,10 @@ label.fld{display:block;font-size:.84rem;color:var(--muted);margin:13px 0 6px}
     <p>病人推進來時，你只有主訴、一張臉、和監視器上的數字。<strong>其他什麼都沒有。</strong></p>
     <p>每個動作都吃掉時鐘上的時間。時間走，病人的樣子跟著變——臉色、呼吸、監視器。驗一堆不會改變處置的東西，代價是你來不及救他。</p>
     <p class="note">結算看的是推理過程，不是速度。有些病人即使你每一步都做對，還是會死。</p>
+    <label class="fld" for="sid">學員代號（選填，供課程前後測對照用）</label>
+    <input id="sid" class="txt" maxlength="12" placeholder="例如 PGY07、C12" autocomplete="off">
+    <p class="note" style="margin-top:6px">請使用課程發放的代號，<strong>切勿填寫姓名、病歷號或員工編號</strong>。
+       本頁純前端運算，不會傳送任何資料到伺服器。</p>
     <button class="cta" id="start">接班</button>
   </div>
 </section>
@@ -659,6 +670,20 @@ const REFHTML='<div class="card"><h2>文獻依據</h2>'
    +`<span class="note">${r[1]}</span><br><span class="note">${r[2]}</span></p>`).join('')
  +'</div>';
 
+// ---- 學習歷程代碼 ----------------------------------------------------
+// 結算時把行為指標壓成一串可貼的短碼，學員自行回填至課程表單。
+// 不含任何個人識別資料；學員代號由課程端發放，與姓名的對照表由教師保管。
+// 格式 NS1-<案例>-<耗時>-<動作數>-<診斷>-<關鍵資訊>-<必要處置>-<低產出分鐘>-<有害>-<時間窗>-<校驗>
+const CASEKEY={mala:'M',meoh:'O',edka:'E',sepsis:'S',salicylate:'A'};
+const b36=n=>Math.max(0,Math.round(n)).toString(36).toUpperCase();
+function makeCode(d){
+  const body=['NS1',CASEKEY[d.case]||'X',b36(d.t),b36(d.n),d.dx?'1':'0',
+    b36(d.keys)+b36(d.keysT),b36(d.tx)+b36(d.txT),b36(d.wasted),
+    d.harm?'1':'0',d.inTime?'1':'0',d.sid||'NA'].join('-');
+  let h=0;for(const ch of body)h=(h*31+ch.charCodeAt(0))>>>0;   // 防手改的簡易校驗
+  return body+'-'+b36(h%1296).padStart(2,'0');
+}
+
 const TOTAL=90;let S=null;
 const $=id=>document.getElementById(id);
 const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.round(m)%60).padStart(2,'0');
@@ -778,7 +803,9 @@ function resetScene(){
 }
 function newGame(){
   const c=CASES[Math.floor(Math.random()*CASES.length)];
-  S={c,t:0,done:[],log:[],tab:'問診',over:false,pins:[]};
+  const el=$('sid');
+  const sid=(S&&S.sid)||(el?el.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12):'');
+  S={c,t:0,done:[],log:[],tab:'問診',over:false,pins:[],sid};
   resetScene();
   $('ptname').textContent=c.name;$('ptstory').textContent=c.story;
   renderTabs();renderActs();renderLog();renderClock();renderPatient();renderPins();
@@ -830,8 +857,34 @@ function commit(){
       <p class="note">${lowYield.map(d=>ACTIONS.find(a=>a.id===d).label).join('、')}</p>
       <p>這些檢查不是「錯」，是<strong>在這個病人身上不划算</strong>。急診的核心技能不是想得到所有可能，是知道哪一項會改變你接下來要做的事。</p>`;
   h+=`<p class="note">總耗時 ${S.t} 分鐘，共執行 ${S.done.length} 個動作。</p></div>`;
+
+  const code=makeCode({case:c.id,t:S.t,n:S.done.length,dx:dxRight,
+    keys:c.key.length-missedKeys.length,keysT:c.key.length,
+    tx:c.need.length-missTx.length,txT:c.need.length,
+    wasted,harm:harmed.length>0,inTime,sid:S.sid});
+  h+=`<div class="card"><h2>學習歷程代碼</h2>
+    <p class="note">把這串代碼貼到課程表單，供教師彙整全班的資訊取捨表現。
+       代碼只含上面這幾項指標，不含姓名或任何病人資料。</p>
+    <div class="codebox"><code id="lcode">${code}</code>
+      <button class="copy" id="copybtn" type="button">複製</button></div></div>`;
+
   h+=REFHTML;
-  $('debriefBody').innerHTML=h;show('debrief');
+  $('debriefBody').innerHTML=h;
+  const btn=$('copybtn');
+  if(btn)btn.onclick=()=>{
+    const t=$('lcode').textContent;
+    const done=()=>{btn.textContent='已複製';btn.classList.add('done');};
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done,()=>fallback(t,done));
+    }else fallback(t,done);
+  };
+  function fallback(t,cb){
+    const ta=document.createElement('textarea');ta.value=t;
+    ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);
+    ta.select();try{document.execCommand('copy');cb();}catch(e){}
+    document.body.removeChild(ta);
+  }
+  show('debrief');
 }
 $('start').onclick=newGame;$('again').onclick=newGame;
 $('decide').onclick=()=>openDecision(false);
