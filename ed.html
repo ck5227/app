@@ -498,7 +498,7 @@ function renderDrawer(){
   if(!OPEN) return;
   const d=C.dx.find(x=>x.id===OPEN); if(!d){closeDrawer();return;}
   const e=evalDx(d), t=TAG[d.id]||'';
-  const tabs=[['why','為什麼考慮'],['ask','還要問什麼'],['test','檢查'],['re','結果回來後'],['dispo','動向']];
+  const tabs=[['why','為什麼考慮'],['ask','還要問什麼'],['test','檢查'],['re','結果與動向']];
   let body='';
   if(DTAB==='why'){
     body=`<p style="margin-top:0">${d.why}</p>`
@@ -516,10 +516,10 @@ function renderDrawer(){
     body=(ok.map(x=>`<div class="item"><b>${x.t}<span class="yield y-${x.yield||'mid'}">${Y[x.yield||'mid']}</span></b>
       <p>目的：${x.purpose}</p>${x.note?`<p>${x.note}</p>`:''}${x.caveat?`<p class="cav">注意：${x.caveat}</p>`:''}${whyBtn(x.refs)}</div>`).join('')
       ||'<p class="muted">無已查證之檢查項目。</p>')+(nb?`<p class="muted">另有 ${nb} 項因引用未查證而封鎖。</p>`:'');
-  }else if(DTAB==='dispo'){
-    body=dispoHTML(d);
   }else{
-    body=`<p style="margin-top:0">${d.reassess||'—'}</p>`;
+    // 結果回來後的重估要點，接著是動向建議
+    body=`<h2 style="font-size:14px;margin:0 0 4px">結果回來後</h2><p style="margin-top:0">${d.reassess||'—'}</p>`
+      +`<h2 style="font-size:14px;margin:16px 0 4px">動向</h2>`+dispoHTML(d);
   }
   const keeps=Object.entries(TAG).filter(([k,v])=>v==='keep').length;
   $('drawer').innerHTML=`<div class="dhead">
